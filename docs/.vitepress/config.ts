@@ -35,6 +35,7 @@ export default defineConfig({
       {
         text: '快速开始',
         items: [
+          { text: 'curl 30 秒上手', link: '/quickstart/curl' },
           { text: 'Docker（本机 5 分钟）', link: '/quickstart/docker' },
           { text: '服务器自部署', link: '/quickstart/self-hosted' },
           { text: 'Agent SDK 第一个请求', link: '/quickstart/agent-sdk' },
@@ -49,6 +50,7 @@ export default defineConfig({
       {
         text: 'API 参考',
         items: [
+          { text: 'OpenAPI 规格', link: '/api/spec' },
           { text: '认证', link: '/api/auth' },
           { text: 'Sandboxes', link: '/api/sandboxes' },
           { text: 'Processes', link: '/api/processes' },
@@ -77,6 +79,7 @@ export default defineConfig({
         {
           text: '快速开始',
           items: [
+            { text: 'curl 30 秒上手', link: '/quickstart/curl' },
             { text: 'Docker（本机 5 分钟）', link: '/quickstart/docker' },
             { text: '服务器自部署', link: '/quickstart/self-hosted' },
             { text: 'Agent SDK 第一个请求', link: '/quickstart/agent-sdk' },
@@ -96,6 +99,7 @@ export default defineConfig({
           text: 'API 参考',
           items: [
             { text: '概述', link: '/api/' },
+            { text: 'OpenAPI 规格(完整渲染)', link: '/api/spec' },
             { text: '认证', link: '/api/auth' },
             { text: 'Sandboxes', link: '/api/sandboxes' },
             { text: 'Processes', link: '/api/processes' },

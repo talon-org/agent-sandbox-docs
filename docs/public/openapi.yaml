@@ -1,0 +1,1010 @@
+openapi: 3.1.0
+info:
+  title: Agent Sandbox API
+  version: 1.0.0
+  description: |
+    REST API for managing isolated sandbox environments. Sandboxes support
+    process execution, filesystem access, PTY terminal streaming, and headless
+    browser sessions.
+
+    ## Authentication
+
+    All endpoints (except `POST /v1/auth/login`) require authentication via:
+    - **Bearer token** — `Authorization: Bearer <jwt>` header
+    - **Cookie** — `sandbox_auth` HttpOnly cookie (set by login endpoint)
+
+    API keys (`ask_…` prefix) are also accepted as Bearer tokens.
+
+  contact:
+    name: Agent Sandbox
+  license:
+    name: Proprietary
+
+servers:
+  - url: http://localhost:18080
+    description: Local development
+  - url: https://api.example.com
+    description: Production
+
+security:
+  - bearerAuth: []
+  - cookieAuth: []
+
+tags:
+  - name: auth
+    description: Authentication — login, logout, current session
+  - name: sandboxes
+    description: Sandbox lifecycle — create, list, get, start, stop, pause, resume, destroy
+  - name: processes
+    description: Process management inside a sandbox
+  - name: fs
+    description: Filesystem operations inside a sandbox
+  - name: terminal
+    description: PTY (interactive terminal) over WebSocket
+  - name: browser
+    description: Headless Chromium browser sessions
+
+paths:
+  # ─── Auth ─────────────────────────────────────────────────────────────────
+
+  /v1/auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Obtain a JWT (and session cookie)
+      security: []   # no auth required
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          headers:
+            Set-Cookie:
+              description: Sets `sandbox_auth` (HttpOnly) and `sandbox_csrf` cookies
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+
+  /v1/auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Clear session cookies
+      responses:
+        '200':
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /v1/auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Return the current session's tenant and role
+      responses:
+        '200':
+          description: Current session info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MeResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─── Sandboxes ────────────────────────────────────────────────────────────
+
+  /v1/sandboxes:
+    post:
+      operationId: createSandbox
+      tags: [sandboxes]
+      summary: Create a new sandbox
+      description: |
+        Creates a sandbox on the least-loaded worker. Returns 201 with the
+        sandbox DTO on success.
+
+        The `wait` query parameter (available after Spec 45) causes the API
+        to block until the sandbox reaches the requested state before returning.
+      parameters:
+        - name: wait
+          in: query
+          description: |
+            Block until the sandbox reaches this state.
+            Available after Spec 45.
+          required: false
+          schema:
+            type: string
+            enum: [created, running, ready]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSandboxRequest'
+      responses:
+        '201':
+          description: Sandbox created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/QuotaExceeded'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+
+    get:
+      operationId: listSandboxes
+      tags: [sandboxes]
+      summary: List all sandboxes for the current tenant
+      responses:
+        '200':
+          description: Sandbox list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SandboxList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /v1/sandboxes/{id}:
+    get:
+      operationId: getSandbox
+      tags: [sandboxes]
+      summary: Get a single sandbox
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '200':
+          description: Sandbox details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      operationId: destroySandbox
+      tags: [sandboxes]
+      summary: Destroy a sandbox
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '204':
+          description: Sandbox destroyed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/start:
+    post:
+      operationId: startSandbox
+      tags: [sandboxes]
+      summary: Start (or re-start) a stopped sandbox
+      description: Idempotent — returns 204 even if the sandbox is already running.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '204':
+          description: Sandbox started (or already running)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/stop:
+    post:
+      operationId: stopSandbox
+      tags: [sandboxes]
+      summary: Stop a running sandbox
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '204':
+          description: Sandbox stopped
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/pause:
+    post:
+      operationId: pauseSandbox
+      tags: [sandboxes]
+      summary: Freeze all processes inside a sandbox (SIGSTOP)
+      description: Idempotent — returns 204 if already paused.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '204':
+          description: Sandbox paused
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/resume:
+    post:
+      operationId: resumeSandbox
+      tags: [sandboxes]
+      summary: Resume a paused sandbox
+      description: Idempotent — returns 204 if already running.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '204':
+          description: Sandbox resumed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── Processes ────────────────────────────────────────────────────────────
+
+  /v1/sandboxes/{id}/processes:
+    post:
+      operationId: startProcess
+      tags: [processes]
+      summary: Start a process inside the sandbox
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StartProcessRequest'
+      responses:
+        '201':
+          description: Process started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Process'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      operationId: listProcesses
+      tags: [processes]
+      summary: List all processes in the sandbox
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '200':
+          description: Process list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/processes/{proc_id}:
+    delete:
+      operationId: stopProcess
+      tags: [processes]
+      summary: Kill a process
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - $ref: '#/components/parameters/processId'
+      responses:
+        '204':
+          description: Process stopped
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/processes/{proc_id}/logs:
+    get:
+      operationId: getProcessLogs
+      tags: [processes]
+      summary: Get stdout+stderr of a process
+      description: |
+        Returns the tail of the combined stdout+stderr log.
+        Default: last 64 KiB. Override with `?tail=<bytes>` (max 32 MiB).
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - $ref: '#/components/parameters/processId'
+        - name: tail
+          in: query
+          description: Maximum number of bytes to return (from the end)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 65536
+      responses:
+        '200':
+          description: Process log tail
+          headers:
+            X-Sandbox-Log-Truncated:
+              description: Present and set to "true" when the log was truncated
+              schema:
+                type: string
+                enum: ['true']
+          content:
+            text/plain:
+              schema:
+                type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── Filesystem ───────────────────────────────────────────────────────────
+
+  /v1/sandboxes/{id}/fs/{path}:
+    get:
+      operationId: fsRead
+      tags: [fs]
+      summary: Read a file from the sandbox filesystem
+      description: |
+        Returns the raw file contents as `application/octet-stream`.
+        Files larger than 16 MiB are truncated; a `X-Sandbox-FS-Truncated: true`
+        header indicates truncation.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - $ref: '#/components/parameters/fsPath'
+      responses:
+        '200':
+          description: File contents
+          headers:
+            X-Sandbox-FS-Truncated:
+              description: Set to "true" when the file was truncated to 16 MiB
+              schema:
+                type: string
+                enum: ['true']
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    put:
+      operationId: fsWrite
+      tags: [fs]
+      summary: Write a file to the sandbox filesystem
+      description: |
+        Request body is the raw file content (any Content-Type).
+        Maximum file size: 16 MiB.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - $ref: '#/components/parameters/fsPath'
+      requestBody:
+        required: true
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: binary
+      responses:
+        '204':
+          description: File written
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      operationId: fsDelete
+      tags: [fs]
+      summary: Delete a file or directory from the sandbox filesystem
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - $ref: '#/components/parameters/fsPath'
+      responses:
+        '204':
+          description: File or directory deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/fs-list/{path}:
+    get:
+      operationId: fsList
+      tags: [fs]
+      summary: List a directory in the sandbox filesystem
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - $ref: '#/components/parameters/fsPath'
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 500
+            default: 100
+      responses:
+        '200':
+          description: Directory listing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FSListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── PTY (WebSocket) ──────────────────────────────────────────────────────
+
+  /v1/sandboxes/{id}/pty:
+    get:
+      operationId: openPTY
+      tags: [terminal]
+      summary: Open a PTY terminal session (WebSocket upgrade)
+      description: |
+        Upgrades the HTTP connection to a WebSocket for bidirectional PTY
+        streaming. The protocol uses binary frames:
+
+        - **Client → Server**: raw bytes written to the PTY stdin
+        - **Server → Client**: raw bytes from the PTY stdout/stderr
+
+        Authentication is via `Authorization` header or `sandbox_auth` cookie
+        (standard WebSocket handshake headers).
+      x-websocket: true
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '101':
+          description: WebSocket upgrade — PTY session established
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── Browser ──────────────────────────────────────────────────────────────
+
+  /v1/sandboxes/{id}/browser:
+    post:
+      operationId: startBrowser
+      tags: [browser]
+      summary: Launch a headless Chromium browser inside the sandbox
+      description: |
+        Starts a Chromium process (port 9222) and returns a `cdp_ws_url` that
+        clients can connect to directly via the Chrome DevTools Protocol.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '201':
+          description: Browser session started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Browser'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    get:
+      operationId: getBrowser
+      tags: [browser]
+      summary: Get the current browser session for a sandbox
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '200':
+          description: Browser session info
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Browser'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+    delete:
+      operationId: stopBrowser
+      tags: [browser]
+      summary: Stop the browser session
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '204':
+          description: Browser stopped
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+# ─── Components ───────────────────────────────────────────────────────────────
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT obtained from `POST /v1/auth/login`, or an API key (`ask_…` prefix)
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sandbox_auth
+
+  parameters:
+    sandboxId:
+      name: id
+      in: path
+      required: true
+      description: Sandbox ID (e.g. `sbx_abc123`)
+      schema:
+        type: string
+        example: sbx_abc123def456789012345678
+
+    processId:
+      name: proc_id
+      in: path
+      required: true
+      description: Process ID (e.g. `proc_abc123`)
+      schema:
+        type: string
+        example: proc_abc123def456789012345678
+
+    fsPath:
+      name: path
+      in: path
+      required: true
+      description: Absolute path inside the sandbox (e.g. `/workspace/app.py`)
+      schema:
+        type: string
+        example: workspace/app.py
+
+  responses:
+    BadRequest:
+      description: Bad request — invalid parameters or request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Authentication required or credentials invalid
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Forbidden:
+      description: Authenticated but not authorized for this operation
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Sandbox, process, or file not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    QuotaExceeded:
+      description: Tenant sandbox quota exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    TooManyRequests:
+      description: Rate limit exceeded (login endpoint)
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    ServiceUnavailable:
+      description: No workers available or all workers are at capacity
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    # ── Auth ────────────────────────────────────────────────────────────────
+
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: alice
+        password:
+          type: string
+          format: password
+          example: s3cr3t
+        tenant:
+          type: string
+          description: Optional tenant ID. Omit to let the server infer it from the username.
+          example: ten_abc123
+
+    LoginResponse:
+      type: object
+      required: [token, expires_at, tenant_id]
+      properties:
+        token:
+          type: string
+          description: "JWT - pass as `Authorization: Bearer <token>`"
+        expires_at:
+          type: integer
+          format: int64
+          description: Token expiry as Unix seconds
+        tenant_id:
+          type: string
+          description: The tenant this session belongs to
+
+    MeResponse:
+      type: object
+      required: [tenant_id, role]
+      properties:
+        tenant_id:
+          type: string
+        role:
+          type: string
+          enum: [viewer, developer, owner]
+
+    # ── Sandbox ─────────────────────────────────────────────────────────────
+
+    Sandbox:
+      type: object
+      required: [id, state, profile]
+      properties:
+        id:
+          type: string
+          example: sbx_abc123def456789012345678
+        state:
+          type: string
+          enum: [created, running, paused, stopped, destroyed, lost]
+        profile:
+          type: string
+          description: Named resource profile used at creation time
+          example: default
+        image_id:
+          type: string
+          description: Base image ID used for this sandbox
+        cpu_millis:
+          type: integer
+          format: int64
+          description: CPU allocation in milli-CPUs (0 = worker default)
+          example: 2000
+        memory_bytes:
+          type: integer
+          format: int64
+          description: Memory allocation in bytes (0 = worker default)
+          example: 4294967296
+        pids_limit:
+          type: integer
+          format: int64
+          description: Maximum number of processes (0 = worker default)
+        idle_timeout_seconds:
+          type: integer
+          format: int64
+          description: Auto-stop after this many idle seconds (0 = disabled)
+        ttl_seconds:
+          type: integer
+          format: int64
+          description: Hard time-to-live in seconds from creation (0 = disabled)
+        last_active_at:
+          type: integer
+          format: int64
+          description: Unix seconds of last activity (0 = not reported)
+        created_at:
+          type: integer
+          format: int64
+          description: Unix seconds of creation time
+        network_policy:
+          type: string
+          enum: [offline, restricted-egress, full-egress]
+          description: Network egress policy
+        secrets:
+          type: array
+          description: Secret bindings attached to this sandbox (metadata only — no values)
+          items:
+            $ref: '#/components/schemas/SecretBinding'
+
+    SandboxList:
+      type: object
+      required: [sandboxes]
+      properties:
+        sandboxes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sandbox'
+
+    CreateSandboxRequest:
+      type: object
+      properties:
+        profile:
+          type: string
+          description: Named resource profile
+          example: default
+        image_id:
+          type: string
+          description: Base image ID. Omit to use the current default image.
+        cpu_millis:
+          type: integer
+          format: int64
+          description: CPU allocation in milli-CPUs. 0 = worker default. Negative values are rejected.
+          minimum: 0
+          example: 2000
+        memory_bytes:
+          type: integer
+          format: int64
+          description: |
+            Memory allocation in bytes. 0 = worker default.
+            The SDK accepts human-readable strings like "4GiB" and converts them.
+          minimum: 0
+          example: 4294967296
+        pids_limit:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Maximum number of processes. 0 = worker default.
+        idle_timeout_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Auto-stop after N idle seconds. 0 = disabled.
+        ttl_seconds:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Hard TTL in seconds from creation. 0 = disabled.
+        network_policy:
+          type: string
+          enum: [offline, restricted-egress, full-egress]
+          description: |
+            Network egress policy. Omit to use the worker default.
+            - `offline` — no outbound network access
+            - `restricted-egress` — allowlist-based outbound
+            - `full-egress` — unrestricted outbound
+        secrets:
+          type: array
+          description: Secret bindings to inject into the sandbox at creation time.
+          items:
+            $ref: '#/components/schemas/SecretBindingRequest'
+
+    SecretBindingRequest:
+      type: object
+      required: [secret_id, mount_type, target]
+      properties:
+        secret_id:
+          type: string
+        mount_type:
+          type: string
+          enum: [file, env]
+        target:
+          type: string
+          description: File path (for mount_type=file) or environment variable name (for mount_type=env)
+
+    SecretBinding:
+      type: object
+      required: [secret_id, name, mount_type, target]
+      properties:
+        secret_id:
+          type: string
+        name:
+          type: string
+        mount_type:
+          type: string
+          enum: [file, env]
+        target:
+          type: string
+
+    # ── Process ─────────────────────────────────────────────────────────────
+
+    Process:
+      type: object
+      required: [id, sandbox_id, command, pid, state, exit_code, started_at, exited_at]
+      properties:
+        id:
+          type: string
+          example: proc_abc123def456789012345678
+        sandbox_id:
+          type: string
+        command:
+          type: array
+          items:
+            type: string
+          example: [npm, run, dev]
+        pid:
+          type: integer
+          format: int32
+        state:
+          type: string
+          enum: [running, exited, killed, failed]
+        exit_code:
+          type: integer
+          format: int32
+          description: Process exit code. -1 = killed by signal.
+        started_at:
+          type: integer
+          format: int64
+          description: Unix seconds
+        exited_at:
+          type: integer
+          format: int64
+          description: Unix seconds. 0 = still running.
+        expose_ports:
+          type: array
+          description: Ports this process declares as externally accessible
+          items:
+            type: integer
+            format: int32
+        host_ports:
+          type: object
+          description: Container-to-host port mapping (runc adapter only)
+          additionalProperties:
+            type: integer
+            format: int32
+
+    ProcessList:
+      type: object
+      required: [processes]
+      properties:
+        processes:
+          type: array
+          items:
+            $ref: '#/components/schemas/Process'
+
+    StartProcessRequest:
+      type: object
+      required: [command]
+      properties:
+        command:
+          type: array
+          items:
+            type: string
+          minItems: 1
+          example: [node, server.js]
+        env:
+          type: array
+          description: Additional environment variables in `KEY=value` form
+          items:
+            type: string
+          example: [PORT=3000, NODE_ENV=production]
+        cwd:
+          type: string
+          description: Working directory relative to the sandbox workspace
+          example: /workspace
+        expose_ports:
+          type: array
+          description: Ports to expose for preview proxy routing
+          items:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 65535
+          example: [3000]
+
+    # ── Filesystem ──────────────────────────────────────────────────────────
+
+    FSEntry:
+      type: object
+      required: [name, size, mod_time, is_dir]
+      properties:
+        name:
+          type: string
+          example: app.py
+        size:
+          type: integer
+          format: int64
+          description: File size in bytes
+        mod_time:
+          type: integer
+          format: int64
+          description: Last modification time as Unix seconds
+        is_dir:
+          type: boolean
+
+    FSListResponse:
+      type: object
+      required: [entries, total]
+      properties:
+        entries:
+          type: array
+          items:
+            $ref: '#/components/schemas/FSEntry'
+        total:
+          type: integer
+          description: Total number of entries in the directory (before pagination)
+
+    # ── Browser ─────────────────────────────────────────────────────────────
+
+    Browser:
+      type: object
+      required: [sandbox_id, process_id, cdp_port, cdp_path, cdp_ws_url]
+      properties:
+        sandbox_id:
+          type: string
+        process_id:
+          type: string
+        cdp_port:
+          type: integer
+          format: int32
+          description: Chrome DevTools Protocol port inside the container (fixed 9222)
+          example: 9222
+        cdp_path:
+          type: string
+          description: CDP WebSocket path
+          example: /devtools/browser/abc-def-123
+        cdp_ws_url:
+          type: string
+          description: |
+            Full WebSocket URL to connect to for CDP. This URL is proxied through
+            the sandbox API and handles authentication transparently.
+          example: wss://api.example.com/v1/sandboxes/sbx_abc123/preview/9222/devtools/browser/abc-def
+        host_port:
+          type: integer
+          format: int32
+          description: Host port used for DNAT (runc adapter only — diagnostics only)
+
+    # ── Errors ──────────────────────────────────────────────────────────────
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+          example: sandbox not found
