@@ -1,0 +1,195 @@
+/* ------------------------------------------------------------------ */
+/* 字体                                                                  */
+/* ------------------------------------------------------------------ */
+:root {
+  --vp-font-family-base: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC',
+    system-ui, -apple-system, sans-serif;
+  --vp-font-family-mono: 'IBM Plex Mono', 'JetBrains Mono', 'Fira Code', 'Cascadia Code',
+    ui-monospace, monospace;
+}
+
+/* ------------------------------------------------------------------ */
+/* 品牌色（亮色模式）                                                     */
+/* ------------------------------------------------------------------ */
+:root {
+  --vp-c-brand-1: #3b82f6;
+  --vp-c-brand-2: #2563eb;
+  --vp-c-brand-3: #1d4ed8;
+  --vp-c-brand-soft: rgba(59, 130, 246, 0.12);
+
+  --vp-button-brand-bg: var(--vp-c-brand-1);
+  --vp-button-brand-hover-bg: var(--vp-c-brand-2);
+  --vp-button-brand-active-bg: var(--vp-c-brand-3);
+}
+
+/* ------------------------------------------------------------------ */
+/* Tokyo Night 暗色模式                                                  */
+/* ------------------------------------------------------------------ */
+.dark {
+  /* backgrounds */
+  --vp-c-bg: #1a1b26;
+  --vp-c-bg-alt: #16161e;
+  --vp-c-bg-elv: #1f2335;
+  --vp-c-bg-soft: #1f2335;
+
+  /* text */
+  --vp-c-text-1: #c0caf5;
+  --vp-c-text-2: #9aa5ce;
+  --vp-c-text-3: #565f89;
+
+  /* brand */
+  --vp-c-brand-1: #7aa2f7;
+  --vp-c-brand-2: #5a8af3;
+  --vp-c-brand-3: #4a7af0;
+  --vp-c-brand-soft: rgba(122, 162, 247, 0.14);
+
+  /* dividers */
+  --vp-c-divider: #2a2d3e;
+  --vp-c-gutter: #13131c;
+
+  /* sidebar */
+  --vp-sidebar-bg-color: #16161e;
+
+  /* nav */
+  --vp-nav-bg-color: rgba(26, 27, 38, 0.95);
+  --vp-nav-screen-bg-color: #16161e;
+
+  /* code block */
+  --vp-code-block-bg: #1f2335;
+  --vp-code-line-highlight-color: rgba(122, 162, 247, 0.06);
+
+  /* tip/warning/danger */
+  --vp-c-tip-1: #7aa2f7;
+  --vp-c-tip-2: #5a8af3;
+  --vp-c-tip-soft: rgba(122, 162, 247, 0.1);
+
+  --vp-c-warning-1: #e0af68;
+  --vp-c-warning-2: #c89b3c;
+  --vp-c-warning-soft: rgba(224, 175, 104, 0.1);
+
+  --vp-c-danger-1: #f7768e;
+  --vp-c-danger-2: #db4b4b;
+  --vp-c-danger-soft: rgba(247, 118, 142, 0.1);
+
+  /* link */
+  --vp-c-default-1: #9ece6a;
+  --vp-c-green-1: #9ece6a;
+  --vp-c-green-soft: rgba(158, 206, 106, 0.1);
+
+  /* purple accent */
+  --vp-c-purple-1: #bb9af7;
+  --vp-c-purple-soft: rgba(187, 154, 247, 0.1);
+}
+
+/* ------------------------------------------------------------------ */
+/* 全局 overrides                                                        */
+/* ------------------------------------------------------------------ */
+
+/* 默认深色 */
+html {
+  color-scheme: dark;
+}
+
+/* 更紧凑的 sidebar 字体 */
+.dark .VPSidebarItem .text {
+  font-size: 0.875rem;
+}
+
+/* 首页 hero 标题用更强的权重 */
+.VPHero .name {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* 代码块增加 padding */
+.vp-code-group .tabs {
+  background: var(--vp-code-block-bg);
+}
+
+.dark .vp-code-group .tabs {
+  border-bottom: 1px solid #2a2d3e;
+}
+
+/* 表格更简洁 */
+.vp-doc table {
+  border-collapse: collapse;
+  font-size: 0.9em;
+}
+
+.dark .vp-doc table thead tr {
+  background: #1f2335;
+}
+
+.dark .vp-doc table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* nav blur 效果 */
+.VPNav {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+/* 去掉 hero 默认的渐变 bg，保持干净背景 */
+.dark .VPHero {
+  background: transparent;
+}
+
+/* badge 颜色 */
+.vp-badge.tip {
+  background: var(--vp-c-brand-soft);
+  color: var(--vp-c-brand-1);
+}
+
+/* 自定义组件 ApiEndpoint 样式 */
+.api-endpoint {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  margin: 1.5rem 0;
+  overflow: hidden;
+}
+
+.api-endpoint-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--vp-c-bg-soft);
+  border-bottom: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.875rem;
+}
+
+.api-method {
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.api-method.get    { background: rgba(158, 206, 106, 0.15); color: #9ece6a; }
+.api-method.post   { background: rgba(122, 162, 247, 0.15); color: #7aa2f7; }
+.api-method.put    { background: rgba(224, 175, 104, 0.15); color: #e0af68; }
+.api-method.patch  { background: rgba(187, 154, 247, 0.15); color: #bb9af7; }
+.api-method.delete { background: rgba(247, 118, 142, 0.15); color: #f7768e; }
+.api-method.ws     { background: rgba(115, 218, 202, 0.15); color: #73daca; }
+
+.api-path {
+  color: var(--vp-c-text-1);
+  flex: 1;
+}
+
+.api-auth-badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+  background: rgba(224, 175, 104, 0.1);
+  color: #e0af68;
+  border: 1px solid rgba(224, 175, 104, 0.3);
+}
+
+.api-endpoint-body {
+  padding: 1rem;
+}
