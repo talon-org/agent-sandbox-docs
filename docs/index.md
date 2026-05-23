@@ -9,11 +9,14 @@ hero:
   tagline: 让 AI 在完全隔离的沙箱里写代码、跑命令、开浏览器、给项目出预览 URL —— 给每个 agent 一台真正可用的工作机。
   actions:
     - theme: brand
-      text: Docker 5 分钟试用
-      link: /quickstart/docker
+      text: curl 30 秒上手
+      link: /quickstart/curl
     - theme: alt
-      text: 服务器自部署
-      link: /quickstart/self-hosted
+      text: SDK 接入
+      link: /quickstart/agent-sdk
+    - theme: alt
+      text: Docker 部署
+      link: /quickstart/docker
     - theme: alt
       text: API 参考
       link: /api/
@@ -39,16 +42,31 @@ features:
     details: 每个 tenant 独立 API key、quota、secrets 注入。所有操作写入审计日志，支持合规查询。
 ---
 
-## 快速选择部署路径
+## 5 种接入方式
+
+平台暴露统一 REST + WebSocket,你可以选最舒服的一条:
+
+| 方式 | 适合 | 起点 |
+|---|---|---|
+| **curl 直调** | 试一下 / shell 脚本 / CI | [curl 30 秒上手](/quickstart/curl) |
+| **Python SDK** `agent-sandbox` | AI agent 主流生态、数据脚本 | `pip install agent-sandbox` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-python)) |
+| **TypeScript SDK** `@agent-sandbox/sdk` | 浏览器扩展 / Node 后端 / Electron | `npm install @agent-sandbox/sdk` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-typescript)) |
+| **Go SDK** | 后端服务 / DevOps 工具 | `go get x.xgit.pro/dark/agent-sandbox-sdk-go` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-go)) |
+| **.NET SDK** `AgentSandbox.Sdk` | Windows 后端 / 企业 .NET 栈 | `dotnet add package AgentSandbox.Sdk` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-dotnet)) |
+| **sandboxctl CLI** | 现场运维 / agent fork-exec / shell 习惯 | `brew install sandboxctl` (规划中,见 [Spec 46](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/superpowers/specs/2026-05-24-sandboxctl-cli-design.md)) |
+
+五条路径语义同步——OpenAPI 是 source of truth([api/openapi.yaml](/openapi.yaml)),SDK 都从同一份契约生成。
+
+## 部署路径
 
 | 场景 | 推荐路径 | 耗时 |
 |---|---|---|
 | mac 上本地体验 / demo | [Docker Compose](/quickstart/docker) | ~5 分钟 |
 | Linux 服务器真实部署 | [systemd 自部署](/quickstart/self-hosted) | ~15 分钟 |
-| 接 AI agent（curl/SDK） | [Agent SDK 指南](/quickstart/agent-sdk) | ~10 分钟 |
+| 接 AI agent(curl/SDK) | [Agent SDK 指南](/quickstart/agent-sdk) | ~10 分钟 |
 
 ::: warning 生产环境注意
-Docker Compose 使用 `localprocess` adapter，sandbox 进程与 worker 共享 PID/网络 namespace，**没有真隔离**。生产环境请用 systemd + runc 路径。
+Docker Compose 使用 `localprocess` adapter,sandbox 进程与 worker 共享 PID/网络 namespace,**没有真隔离**。生产环境请用 systemd + runc 路径。
 :::
 
 ## 核心架构概览
