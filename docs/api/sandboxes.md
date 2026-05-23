@@ -303,3 +303,59 @@ Authorization: Bearer ask_X_...
 | `created_at` | int64 | 创建时间（Unix 秒） |
 | `network_policy` | string | 网络出站策略 |
 | `secrets` | array | 绑定的凭证（元数据，不含 value） |
+
+---
+
+## Signed Preview Token {#signed-preview-token}
+
+Issue a short-lived token that lets anyone holding it access the preview proxy for a specific port — no account required.
+
+See [Signed Preview URL](/concepts/signed-preview) for the full guide.
+
+### POST `/v1/sandboxes/{id}/preview-token`
+
+**Requires developer or owner role**
+
+```http
+POST /v1/sandboxes/{id}/preview-token
+Authorization: Bearer ask_X_...
+Content-Type: application/json
+
+{
+  "port": 5173,
+  "ttl_seconds": 3600
+}
+```
+
+**Request body**
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `port` | int | yes | Container port to authorise (1–65535) |
+| `ttl_seconds` | int64 | no | Token lifetime in seconds (default 3600, max 86400) |
+
+**Response — 201 Created**
+
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "expires_at": "2026-05-24T15:04:05Z"
+}
+```
+
+Use the token by appending `?token=<value>` to the preview URL:
+
+```
+https://api.example.com/v1/sandboxes/sbx_xxx/preview/5173/?token=eyJ...
+```
+
+The token is stripped before forwarding to the upstream app and cannot be used on any other endpoint.
+
+**Error responses**
+
+| Code | Meaning |
+|---|---|
+| 400 | `port` out of range or request body invalid |
+| 401 | Not authenticated |
+| 403 | Insufficient role (viewer) |
+| 404 | Sandbox not found |
