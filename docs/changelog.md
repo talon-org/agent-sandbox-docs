@@ -12,6 +12,97 @@ description: Agent Sandbox Platform 版本更新记录
 > 运行 `pnpm sync:docs` 可拉取最新版本。
 
 
+## [1.0.0] - 2026-05-24
+
+第一个面向客户的稳定版本。从 v0.1 内测一次性补齐了 5 条接入方式、商业化前置
+(RBAC + seccomp + sandbox-logger sidecar + ?wait=running)、生产部署双轨
+(Docker dev / systemd 生产)、文档站 + Grafana dashboard 预置。
+
+详见 [v1.0 release checklist](docs/superpowers/specs/2026-05-24-v1.0-release-checklist.md)。
+
+### Added
+
+- **Spec 41 — sandbox-logger sidecar**:O_RDWR self-keepalive fifo 持久 reader,
+  worker 重启时业务进程不再被 SIGPIPE 杀;静态 linux 二进制随 worker 启动
+  hardlink 注入 sandbox rootfs。e2e 验证:`kill -9 worker` 后业务 alive +
+  日志连续无断。
+- **Spec 42 — per-tenant RBAC**:owner / developer / viewer 三角色,JWT
+  携带 role,`RequireRole` middleware 装饰所有 mutating 端点。`PATCH /v1/tenants/
+  {tid}/users/{uid}` owner-only + last-owner 保护。`/auth/me` 返 role。
+- **Spec 44 — seccomp filter**:241 syscall 白名单 (`ocibundle.DefaultSeccompProfile`)
+  + 三架构 (x86_64/x86/aarch64) + `SANDBOX_DISABLE_SECCOMP` opt-out。
+- **Spec 45 — API/SDK 友好端点**:network_policy 别名 (allowlist/open/sealed/deny)
+  服务端层 + `POST /v1/sandboxes?wait=running` 同步生命周期 (wait_timeout 默认 60s
+  上限 300s,504 timeout 返当前 state)。
+- **Spec 46 — sandboxctl CLI P1**:Go + cobra 单二进制,独立 go.mod 避免污染主仓。
+  命令:login / logout / whoami / create / list / get / rm / version。XDG 配置
+  + OS keyring 存 API key。52 tests 全绿。P2/P3 (exec/pty/cp/preview/agent run)
+  留下一版。
+- **Spec 47 — prewarm 池重启 reclaim**:worker 启动时 `ReclaimPrewarmLeftovers`
+  清理野 prewarm 容器(没在中心表的 runc 残留),metric
+  `sandbox_prewarm_reclaimed_total{outcome}`。
+- **Spec 48 — signed preview URL**:`POST /v1/sandboxes/{id}/preview-token`
+  签发短期 JWT(`iss="preview"` / `aud="preview"` 与用户 JWT 隔离),`?token=`
+  持票即放行 preview,跳过 cookie/CSRF/API key 流程,方便分享 demo。token 绑定
+  sandbox_id + port,跨 sandbox/port 拒;TTL 默认 3600s 上限 86400s;preview
+  handler 验签通过后从 URL 剥除 `?token=` 避免泄露给后端。metric
+  `sandbox_preview_token_total{outcome=signed|verified|invalid|expired}`。
+  12 unit tests + 9 e2e tests 全绿。
+- **OpenAPI 3.1 完整 spec**:`api/openapi.yaml` 1010 行,covers 8 endpoint
+  groups (auth/sandboxes/processes/fs/pty/browser/agent/admin)。
+- **4 语言 SDK**:Python `agent-sandbox`(15 tests)/ TypeScript
+  `@agent-sandbox/sdk`(57 tests)/ Go(56 tests, -race 绿)/ .NET
+  `AgentSandbox.Sdk`(53 tests)。各自独立 git 仓,从同一份 OpenAPI 对齐字段。
+  全部支持 hero 三步:create with `wait="running"` → run process → preview URL。
+- **客户文档站**:VitePress 驱动 [agent-sandbox-docs](http://x.xgit.pro/dark/agent-sandbox-docs),
+  含 quickstart(curl 30s + docker + systemd + SDK)+ API 参考 9 页 +
+  OpenAPI Redoc 渲染 + 部署 4 页 + 运维监控 + changelog。
+- **设计 tokens**:`design-tokens/tokens.css` 8 主题 × 2 mode × 4 字体 × 3 密度
+  data-attribute 组合切换,console SPA / docs 站 / 未来官网共用。
+- **Grafana dashboard 预置**:`deploy/grafana/dashboards/agent-sandbox-overview.json`
+  25 panels 分 5 row,$tenant_id 多选 + $DS_PROMETHEUS 数据源变量,Grafana 10+
+  schema v39。配套 4 条 PromQL 告警建议。
+
+### Deployment
+
+- **Docker compose** (`deploy/docker/`):multi-stage Dockerfile (node-alpine SPA
+  build → golang-bookworm CGO talon build → debian-slim 127MB final),3 服务 +
+  4 named volumes,自动 secret 生成。**明确标 dev/test only**(localprocess
+  adapter 无真隔离)。
+- **systemd quickstart** (`deploy/systemd/quickstart.sh` 463 行):preflight + 7 步包装
+  (install + bootstrap + enable + start + summary)。`preflight.sh` 9 项环境检查
+  (内核 / runc / cgroup v2 / iptables / 网段 / netns / 必装包 / HTTPS)。
+- **部署文档** `docs/deployment/README.md`:三路径入口(Docker dev / systemd
+  生产 / mac → 服务器发布),build-bundle.sh tarball + scp + sha256 验证 +
+  多机 fan-out。
+
+### Changed
+
+- **Spec 18 → runsc adapter** 默认仍 `runc`,`SANDBOX_RUNTIME=runc|runsc|localprocess`
+  全局可切。gVisor 路径 e2e 通过。
+- **Spec 40 stage 3** rootfs 默认切 overlay(数据驱动:prewarm pool 5 sandbox
+  物理盘 hardlink 0MB / overlay 0.1MB,启动 0.050s vs 0.051s 几乎同;但 overlay
+  解锁 apt/pip/npm install 等可写场景)。`SANDBOX_ROOTFS_MODE=hardlink` opt-out
+  保留。
+
+### Fixed
+
+- **arch_prctl seccomp regression**:x86_64 glibc TLS 初始化要 `arch_prctl(ARCH_SET_FS, ...)`,
+  之前默认 profile 漏掉导致所有容器进程秒崩 "Cannot allocate TLS block"。补到
+  syscall 白名单 + 加 regression test (commit ef51ff4)。
+
+### Migration from 0.1
+
+- 升级路径:`git pull && systemctl restart agent-sandbox-{api,worker}`。
+- 数据库 schema 自动 migrate(users 表加 role 字段,迁移老数据 = 每 tenant
+  最小 id 升 owner)。
+- 已有 sandbox 不需要重建。
+- 已有 API key 继续可用(API key 路径默认 developer 角色,跟旧行为一致)。
+- 之前用 `network_policy: restricted-egress` 的 SDK / 脚本仍可用;新代码推荐
+  用别名 `network: allowlist` 更短。
+
+---
+
 ## [0.1.0] - 2026-05-23
 
 ### Security
