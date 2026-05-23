@@ -71,6 +71,12 @@ export default defineConfig({
           { text: '反向代理', link: '/deploy/reverse-proxy' },
         ],
       },
+      {
+        text: '运维',
+        items: [
+          { text: '监控接入', link: '/operations/monitoring' },
+        ],
+      },
       { text: 'Changelog', link: '/changelog' },
     ],
 
@@ -120,6 +126,14 @@ export default defineConfig({
             { text: 'systemd 单节点（生产）', link: '/deploy/systemd-single-node' },
             { text: 'Mac → 服务器发布', link: '/deploy/from-mac-to-server' },
             { text: '反向代理（Caddy / nginx）', link: '/deploy/reverse-proxy' },
+          ],
+        },
+      ],
+      '/operations/': [
+        {
+          text: '运维',
+          items: [
+            { text: '监控接入', link: '/operations/monitoring' },
           ],
         },
       ],
