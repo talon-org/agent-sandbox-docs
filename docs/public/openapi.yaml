@@ -127,12 +127,28 @@ paths:
         - name: wait
           in: query
           description: |
-            Block until the sandbox reaches this state.
-            Available after Spec 45.
+            Block until the sandbox reaches this state before returning.
+
+            - `created` — return as soon as the sandbox record exists (≈ default async behavior)
+            - `running` — block until the runtime container is up
+            - `ready` — block until the container is up AND the agent harness inside reports ready
           required: false
           schema:
             type: string
             enum: [created, running, ready]
+        - name: wait_timeout
+          in: query
+          description: |
+            Max seconds to wait when `wait` is set. Capped at 300. If the
+            target state isn't reached within this window the API returns
+            504 with the current sandbox state in the response body so the
+            caller can decide whether to retry or destroy.
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 300
+            default: 60
       requestBody:
         required: true
         content:
@@ -141,7 +157,7 @@ paths:
               $ref: '#/components/schemas/CreateSandboxRequest'
       responses:
         '201':
-          description: Sandbox created
+          description: Sandbox created (and reached `wait` state if requested)
           content:
             application/json:
               schema:
@@ -156,6 +172,15 @@ paths:
           $ref: '#/components/responses/QuotaExceeded'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+        '504':
+          description: |
+            `wait` timeout reached before the sandbox reached the requested
+            state. Body is the current `Sandbox` snapshot so the caller can
+            destroy / keep waiting / proceed at the current state.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sandbox'
 
     get:
       operationId: listSandboxes
@@ -812,12 +837,19 @@ components:
           description: Hard TTL in seconds from creation. 0 = disabled.
         network_policy:
           type: string
-          enum: [offline, restricted-egress, full-egress]
+          enum: [offline, restricted-egress, full-egress, allowlist, open, sealed, deny]
           description: |
             Network egress policy. Omit to use the worker default.
+
+            Canonical values:
             - `offline` — no outbound network access
             - `restricted-egress` — allowlist-based outbound
             - `full-egress` — unrestricted outbound
+
+            SDK-friendly aliases (Spec 45, accepted server-side):
+            - `allowlist` → `restricted-egress`
+            - `open` → `full-egress`
+            - `sealed`, `deny` → `offline`
         secrets:
           type: array
           description: Secret bindings to inject into the sandbox at creation time.
