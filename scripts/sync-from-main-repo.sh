@@ -48,9 +48,16 @@ description: Agent Sandbox Platform 版本更新记录
 > 运行 \`pnpm sync:docs\` 可拉取最新版本。
 "
 
-  # 跳过主仓 CHANGELOG 头两行（# Changelog 和空行），拼上 frontmatter
-  BODY=$(tail -n +2 "$CHANGELOG_SRC")
-  printf '%s\n%s\n' "$FRONTMATTER" "$BODY" > "$CHANGELOG_DST"
+  # 跳过主仓 CHANGELOG 头部（# Changelog + 描述段落 + --- 分隔线），从第一个版本条目开始
+  # 找到第一个 ## [版本] 行的行号
+  FIRST_VER_LINE=$(grep -n "^## \[" "$CHANGELOG_SRC" | head -1 | cut -d: -f1)
+  if [ -n "$FIRST_VER_LINE" ]; then
+    BODY=$(tail -n +"$FIRST_VER_LINE" "$CHANGELOG_SRC")
+  else
+    # 兜底：跳过前 6 行
+    BODY=$(tail -n +7 "$CHANGELOG_SRC")
+  fi
+  printf '%s\n\n%s\n' "$FRONTMATTER" "$BODY" > "$CHANGELOG_DST"
   echo "  ✅  CHANGELOG 已同步 → docs/changelog.md"
 fi
 
