@@ -8,6 +8,20 @@
 4. 读取进程日志
 5. 销毁 sandbox
 
+::: tip 官方 SDK 已发布
+四语言 SDK 已经发布,推荐直接用,比 raw HTTP 更短更安全:
+
+| 语言 | 安装 | 仓库 |
+|---|---|---|
+| Python | `pip install agent-sandbox` | [agent-sandbox-sdk-python](http://x.xgit.pro/dark/agent-sandbox-sdk-python) |
+| TypeScript | `npm install @agent-sandbox/sdk` | [agent-sandbox-sdk-typescript](http://x.xgit.pro/dark/agent-sandbox-sdk-typescript) |
+| Go | `go get x.xgit.pro/dark/agent-sandbox-sdk-go` | [agent-sandbox-sdk-go](http://x.xgit.pro/dark/agent-sandbox-sdk-go) |
+| .NET | `dotnet add package AgentSandbox.Sdk` | [agent-sandbox-sdk-dotnet](http://x.xgit.pro/dark/agent-sandbox-sdk-dotnet) |
+
+下面示例里 Python / TS 代码段用的是 raw `httpx` / `fetch` 帮你理解 HTTP 契约;
+**实际项目用 SDK**(`sb.processes.start({...})` 比拼 URL+headers 短一半)。
+:::
+
 ## 前置条件
 
 你已经有一个运行中的 Agent Sandbox Platform（[Docker 版](/quickstart/docker) 或 [服务器版](/quickstart/self-hosted)），并拿到了 API Key（形如 `ask_X_...`）。
