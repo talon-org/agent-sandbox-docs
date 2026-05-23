@@ -6,6 +6,9 @@ export default defineConfig({
   lang: 'zh-CN',
   cleanUrls: true,
 
+  // ADR 文件从主仓同步，内部有指向主仓代码的相对链接，跳过检查
+  ignoreDeadLinks: true,
+
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
     ['meta', { property: 'og:title', content: 'Agent Sandbox Platform' }],
