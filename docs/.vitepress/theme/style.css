@@ -116,6 +116,30 @@ html {
   letter-spacing: -0.02em;
 }
 
+/* 首页 features 卡片的 Lucide SVG 图标:
+   SVG 用 stroke="currentColor",这里用品牌蓝 + 滤镜模拟。
+   - 亮色:深一点的品牌蓝,在白底有对比
+   - 暗色:亮一点的品牌蓝,在深底卡片上能看清 */
+.VPFeature .icon {
+  background-color: transparent !important;
+}
+
+.VPFeature .icon img {
+  /* 把黑色 SVG 染成品牌蓝。filter 公式来自 https://codepen.io/sosuke/pen/Pjoqqp
+     对应目标色:亮色 #2563eb(brand-2)/ 暗色 #7aa2f7(brand-1 dark) */
+  filter: brightness(0) saturate(100%)
+          invert(34%) sepia(94%) saturate(2476%) hue-rotate(214deg)
+          brightness(95%) contrast(94%);
+  width: 28px;
+  height: 28px;
+}
+
+.dark .VPFeature .icon img {
+  filter: brightness(0) saturate(100%)
+          invert(70%) sepia(50%) saturate(648%) hue-rotate(189deg)
+          brightness(100%) contrast(96%);
+}
+
 /* 代码块增加 padding */
 .vp-code-group .tabs {
   background: var(--vp-code-block-bg);
