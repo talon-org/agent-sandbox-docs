@@ -112,8 +112,8 @@ await sb.spawn("npm run dev")    # 一启动就能访问
 
 | 进程 listen | 显式 expose | 结果 |
 |---|---|---|
-| 是 | 是 | ✅ 通(走 explicit 准入 + dynamic 端口翻译) |
-| 是 | 否 | ✅ 通(dynamic) |
+| 是 | 是 | 通(走 explicit 准入 + dynamic 端口翻译) |
+| 是 | 否 | 通(dynamic) |
 | 否 | 是 | DNAT 准备好,但进程没 listen → 后端 502 |
 | 否 | 否 | 403(不在准入列表) |
 

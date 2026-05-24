@@ -13,10 +13,12 @@ Docker Compose 使用 `localprocess` adapter，sandbox 进程与 worker 共享 P
 - 约 500 MB 磁盘空间（image build cache）
 - 端口 `18080` 空闲（可修改）
 
-## 第一步：克隆主仓
+## 第一步：拿到主仓代码
+
+平台代码暂未开源,需向团队申请访问后克隆:
 
 ```bash
-git clone http://x.xgit.pro/dark/agent-sandbox-platform.git
+git clone <agent-sandbox-platform 仓库地址>
 cd agent-sandbox-platform
 ```
 

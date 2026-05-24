@@ -54,13 +54,13 @@ Content-Type: application/json
 | `labels` | object | 否 | 自定义标签 dict |
 | `secrets` | array | 否 | 注入的凭证列表（见下方说明） |
 
-**network 别名（Spec 45）：**
+**network 别名：**
 
-| v2 别名 | 等价 v1 `network_policy` | 含义 |
-|---|---|---|
-| `sealed` | `offline` | 完全断网，只有 lo |
-| `allowlist` | `restricted-egress` | DNS + 配置好的白名单域（生产推荐） |
-| `open` | `full-egress` | 允许所有出站（开发调试） |
+| 别名 | 含义 |
+|---|---|
+| `sealed` | 完全断网，只有 lo |
+| `allowlist` | DNS + 配置好的白名单域（生产推荐） |
+| `open` | 允许所有出站（开发调试） |
 
 **duration 字符串** — `30s` / `5m` / `2h` / `1d` / `1w`，扩展 Go ParseDuration
 加 `d` / `w` 单位。
@@ -75,33 +75,6 @@ Content-Type: application/json
 | `secret_id` | 已创建的 secret ID |
 | `mount_type` | `file`（挂载为 tmpfs 文件）或 `env`（注入为环境变量） |
 | `target` | `file` 模式：`/run/secrets/<target>`；`env` 模式：环境变量名 |
-
-### 请求体（v1 兼容，deprecated）
-
-服务端保留 v1 字段不破坏老客户端，但**不要**在同一请求里混用两种风格 — 会
-返回 400 `can't mix v1 and v2 resource fields, pick one`。
-
-```json
-{
-  "image_id": "img_xxxxxxxxxxxxxxxxxxxxxxxxxx",
-  "cpu_millis": 2000,
-  "memory_bytes": 4294967296,
-  "pids_limit": 256,
-  "idle_timeout_seconds": 1800,
-  "ttl_seconds": 21600,
-  "network_policy": "restricted-egress"
-}
-```
-
-| v1 字段 | v2 等价 |
-|---|---|
-| `cpu_millis: 2000` | `resources.cpu: 2` |
-| `memory_bytes: 4294967296` | `resources.memory: "4GiB"` |
-| `idle_timeout_seconds: 1800` | `timeout: "30m"` |
-| `ttl_seconds: 21600` | `ttl: "6h"` |
-| `network_policy: "restricted-egress"` | `network: "allowlist"` |
-| `image_id: "img_xxx"` | `image: "node:20-bookworm"`（tag 而非 image ID） |
-| `profile: "code-lite"` | 已移除（直接指 `image`） |
 
 **响应**
 
@@ -471,12 +444,6 @@ Authorization: Bearer ask_X_...
 | `last_active_at` | int64 | 最后活跃时间（Unix 秒） |
 | `created_at` | int64 | 创建时间（Unix 秒） |
 | `secrets` | array | 绑定的凭证（元数据，不含 value） |
-
-::: details v1 字段（兼容输出，新接入忽略）
-v1 客户端可继续读 `cpu_millis` / `memory_bytes` / `idle_timeout_seconds` /
-`ttl_seconds` / `network_policy` / `image_id` / `profile` — 服务端同时返回两套
-字段，新代码用 v2 字段即可。
-:::
 
 ---
 

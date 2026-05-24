@@ -107,11 +107,11 @@ function generateSummary(routes: Route[], dtoNames: string[]): string {
   ];
 
   const authLabel: Record<string, string> = {
-    admin: '🔴 admin',
-    owner: '🟠 owner',
-    developer: '🟡 developer',
-    viewer: '🟢 viewer',
-    none: '⚪ none',
+    admin: 'admin',
+    owner: 'owner',
+    developer: 'developer',
+    viewer: 'viewer',
+    none: 'none',
   };
 
   for (const r of routes) {

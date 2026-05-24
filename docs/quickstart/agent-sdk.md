@@ -207,8 +207,7 @@ tsb rm $SBX
 
 ## 设计原则
 
-四语言 SDK 表层一致(详见
-[Spec 49 — SDK v2 API 表层设计](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/superpowers/specs/2026-05-24-sdk-v2-api-design.md))。
+四语言 SDK 表层一致,遵守同一份设计规范。
 
 - **概念扁平** — `sb.run` / `sb.spawn` / `sb.expose` / `sb.fs` / `sb.terminal`,
   没有嵌套的 `sb.processes.create()` 这种 RPC 风格
@@ -404,9 +403,3 @@ tsb whoami
 - [端口暴露](../concepts/expose-ports) — explicit vs dynamic、签名 URL
 - [签名 Preview URL](../concepts/signed-preview) — 安全模型
 - [API 参考](../api/) — REST 完整接口
-
-## v1 SDK?
-
-v1(`agent-sandbox` / `@agent-sandbox/sdk` / `agent-sandbox-sdk-go`)已废弃,
-2026-11-24 归档前只接 P0 安全 fix。30 分钟迁移指南:
-[v1 → v2 SDK migration](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/migration/v1-to-v2-sdk.md)。

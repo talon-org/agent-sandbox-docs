@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitepress'
+import { withMermaid } from 'vitepress-plugin-mermaid'
 
-export default defineConfig({
+export default withMermaid(defineConfig({
   title: 'Agent Sandbox Platform',
   description: 'AI agent 在线沙箱平台：让 AI 在隔离环境里写代码、跑命令、开浏览器、给项目出预览 URL',
   lang: 'zh-CN',
@@ -202,4 +203,8 @@ export default defineConfig({
       level: [2, 3],
     },
   },
-})
+
+  mermaid: {
+    theme: 'default',
+  },
+}))

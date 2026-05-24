@@ -1,10 +1,8 @@
-# curl 30 秒上手
+# 30 秒上手
 
-不装 SDK,不装 CLI——一行 `curl` 看效果。
-
-> 本页是"我想验证一下平台能用"的最短路径。要做完整集成请看
-> [Agent SDK 第一个请求](./agent-sdk)(Python / TS / Go / C#)
-> 或 [talon-sandbox CLI](#cli-备选)。
+下面给两种方式:**官方 SDK**(推荐,更短更安全)和 **raw curl**(看 wire
+契约用)。挑顺手的复制粘贴。完整 SDK 介绍见
+[SDK 第一个请求](./agent-sdk)。
 
 ## 前置
 
@@ -13,11 +11,117 @@
 - 一个 API Key,形如 `ask_X_...`(login 后生成,或 bootstrap 时打印)
 
 ```bash
-export BASE=http://localhost:18080
-export KEY=ask_X_xxxxxxxxxxxxxxxx
+export TALON_SANDBOX_SERVER=http://localhost:18080
+export TALON_SANDBOX_API_KEY=ask_X_xxxxxxxxxxxxxxxx
 ```
 
-## 三步走
+## SDK 30 秒
+
+::: code-group
+
+```python [Python]
+# pip install talon-sandbox
+import asyncio
+from talon_sandbox import Sandbox
+
+async def main():
+    async with Sandbox.create(
+        image="alpine-3.20",
+        resources={"cpu": 2, "memory": "4GiB"},
+        network="allowlist",
+    ) as sb:
+        print((await sb.run("uname -a")).stdout)
+        await sb.spawn("python3 -m http.server 8000")
+        print(await sb.expose(8000))  # → http://sb-xxx-8000.preview...
+
+asyncio.run(main())
+```
+
+```typescript [TypeScript]
+// npm install talon-sandbox
+import { Sandbox } from "talon-sandbox";
+
+const sb = await Sandbox.create({
+  image: "alpine-3.20",
+  resources: { cpu: 2, memory: "4GiB" },
+  network: "allowlist",
+});
+
+try {
+  console.log((await sb.run("uname -a")).stdout);
+  await sb.spawn("python3 -m http.server 8000");
+  console.log(await sb.expose(8000));
+} finally {
+  await sb.kill();
+}
+```
+
+```go [Go]
+// go get x.xgit.pro/dark/talon-sandbox-sdk-go
+package main
+
+import (
+    "context"
+    "fmt"
+    talonsandbox "x.xgit.pro/dark/talon-sandbox-sdk-go"
+)
+
+func main() {
+    ctx := context.Background()
+    sb, _ := talonsandbox.Create(ctx,
+        talonsandbox.WithImage("alpine-3.20"),
+        talonsandbox.WithResources(talonsandbox.Resources{CPU: 2, Memory: "4GiB"}),
+        talonsandbox.WithNetwork("allowlist"),
+    )
+    defer sb.Kill(ctx)
+
+    r, _ := sb.Run(ctx, "uname -a")
+    fmt.Println(r.Stdout)
+    sb.Spawn(ctx, "python3 -m http.server 8000")
+    exposed, _ := sb.Expose(ctx, 8000)
+    fmt.Println(exposed.URL)
+}
+```
+
+```csharp [C#]
+// dotnet add package TalonSandbox.Sdk
+using TalonSandbox.Sdk;
+
+await using var sb = await Sandbox.CreateAsync(new CreateOptions {
+    Image = "alpine-3.20",
+    Resources = new Resources { Cpu = 2, Memory = "4GiB" },
+    Network = "allowlist",
+});
+
+Console.WriteLine((await sb.RunAsync("uname -a")).Stdout);
+await sb.SpawnAsync("python3 -m http.server 8000");
+Console.WriteLine((await sb.ExposeAsync(8000)).Url);
+```
+
+```bash [CLI]
+# tsb 是 talon-sandbox 的短名
+SBX=$(tsb create \
+    --image alpine-3.20 \
+    --resources cpu=2,memory=4GiB \
+    --network allowlist \
+    --wait running -o id)
+
+tsb run $SBX "uname -a"
+tsb spawn $SBX "python3 -m http.server 8000"
+tsb expose $SBX 8000
+tsb rm $SBX
+```
+
+:::
+
+## raw curl
+
+不想装任何东西、想直接看 wire 协议?用下面三步:
+
+```bash
+BASE=$TALON_SANDBOX_SERVER
+KEY=$TALON_SANDBOX_API_KEY
+```
 
 ### 1. 拉起
 
@@ -27,8 +131,7 @@ SBX=$(curl -fsS -X POST "$BASE/v1/sandboxes" \
   -H "Content-Type: application/json" \
   -d '{
     "image": "alpine-3.20",
-    "cpu_millis": 2000,
-    "memory_bytes": 4294967296,
+    "resources": {"cpu": 2, "memory": "4GiB"},
     "network": "allowlist"
   }' | jq -r .id)
 
@@ -159,9 +262,6 @@ tsb expose $SBX 8000
 tsb create --image alpine-3.20 --resources cpu=2,memory=4GiB --network allowlist \
   --spawn "python3 -m http.server 8000" --expose 8000 --print-url
 ```
-
-旧 `sandboxctl`(主仓 cmd/sandboxctl/)已废弃,见
-[v1→v2 迁移指南](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/migration/v1-to-v2-sdk.md)。
 
 ## 完整 API
 

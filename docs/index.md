@@ -22,22 +22,34 @@ hero:
       link: /api/
 
 features:
-  - icon: 🔒
+  - icon:
+      light: /icons/shield.svg
+      dark: /icons/shield.svg
     title: 真隔离容器
     details: 每个 sandbox 独立 PID/网络 namespace、cgroup v2 资源限额、capability drop。runc OCI 标准运行时，不是普通进程 fork。
-  - icon: 🖥️
+  - icon:
+      light: /icons/terminal.svg
+      dark: /icons/terminal.svg
     title: 交互式 PTY
     details: WebSocket PTY 端点，原生支持交互式 shell。全程录像，可 replay 审计每一个 AI 操作。
-  - icon: 🌐
+  - icon:
+      light: /icons/globe.svg
+      dark: /icons/globe.svg
     title: Headless 浏览器
     details: 每个 sandbox 内置 Chromium + CDP。AI agent 可以打开网页、截图、操作 DOM，开箱即用。
-  - icon: 👀
+  - icon:
+      light: /icons/eye.svg
+      dark: /icons/eye.svg
     title: 项目预览 URL
     details: sandbox 内跑 Vite/Next.js/Node 开发服务器后，自动出外部可访问的预览地址。支持 path-prefix 和 subdomain 两种模式。
-  - icon: 💾
+  - icon:
+      light: /icons/database.svg
+      dark: /icons/database.svg
     title: Workspace 持久化
     details: 文件系统 overlayfs 挂载 + workspace volume。worker 重启、sandbox pause/resume，数据不丢。
-  - icon: 🔑
+  - icon:
+      light: /icons/key.svg
+      dark: /icons/key.svg
     title: 多租户 + 审计
     details: 每个 tenant 独立 API key、quota、secrets 注入。所有操作写入审计日志，支持合规查询。
 ---
@@ -64,14 +76,6 @@ SDK / CLI 目前**未发布**到公开 registry(PyPI / npm / NuGet / Homebrew),
 从内部 Gitea 仓直装。商业化 GA 后会发,届时改成短命令:`pip install
 talon-sandbox` / `npm install talon-sandbox` / `dotnet add package
 TalonSandbox.Sdk` / `brew install talon-sandbox`。
-:::
-
-::: warning v1 SDK 已废弃
-`agent-sandbox` / `@agent-sandbox/sdk` / `agent-sandbox-sdk-go` /
-`AgentSandbox.Sdk` 标 deprecated,仅接 P0 安全 fix,**新代码请用
-`talon-sandbox`**。
-迁移指南:[v1 → v2 SDK](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/migration/v1-to-v2-sdk.md)
-(典型项目 30 分钟,主要改 import 和 6 个 API 名字)。
 :::
 
 ## 部署路径

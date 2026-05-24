@@ -1,8 +1,7 @@
 # 监控接入
 
 平台所有进程暴露 Prometheus 兼容的 `/metrics` 端点。配套 Grafana
-dashboard 在主仓 [`deploy/grafana/dashboards/`](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/deploy/grafana/dashboards),
-一键 import 看面板。
+dashboard 随主仓发布物附带(`deploy/grafana/dashboards/`),一键 import 看面板。
 
 ## 端点
 
@@ -56,16 +55,12 @@ scrape_configs:
 | `sandbox_audit_events_total{event_type,outcome}` | counter | 审计事件 |
 | `sandbox_scheduler_all_workers_full_total` | counter | 调度时 worker 全满 |
 
-完整列表见
-[主仓 metrics registry](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/internal/observability/metrics/registry.go)。
+完整列表见主仓 `internal/observability/metrics/registry.go`。
 
 ## Grafana dashboard
 
 ```bash
-# 拿到 dashboard JSON
-curl -fsSL -o agent-sandbox-overview.json \
-  http://x.xgit.pro/dark/agent-sandbox-platform/raw/branch/main/deploy/grafana/dashboards/agent-sandbox-overview.json
-
+# Dashboard JSON 随发布物分发(`deploy/grafana/dashboards/agent-sandbox-overview.json`)
 # Grafana UI: Dashboards → New → Import → Upload JSON → 选 Prometheus datasource
 ```
 

@@ -23,8 +23,8 @@
 **在 mac 上**（使用 Docker 交叉编译）：
 
 ```bash
-# 克隆主仓
-git clone http://x.xgit.pro/dark/agent-sandbox-platform.git
+# 拿到主仓代码(暂未开源,需向团队申请)
+git clone <agent-sandbox-platform 仓库地址>
 cd agent-sandbox-platform
 
 # 构建 linux/amd64 tarball

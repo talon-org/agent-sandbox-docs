@@ -163,9 +163,6 @@ lost     → destroyed (delete)
 ::: tip 推荐配置
 对于 AI agent 工作流，推荐设置 `timeout="5m"`。agent 不活跃时自动 pause 节省
 资源，需要时 resume 恢复，毫秒级延迟。
-
-v1 字段 `idle_timeout_seconds` / `ttl_seconds`（整数秒）仍兼容，但 v2 SDK 全部用
-duration 字符串。
 :::
 
 ## 并发操作

@@ -32,13 +32,11 @@ Content-Type: application/json
 | `env` | string[] | 否 | 额外环境变量，`KEY=value` 格式 |
 | `cwd` | string | 否 | 相对 workspace 根目录的子路径；空 = workspace 根目录 |
 
-::: tip 端口暴露已独立
-v2 起，端口暴露从进程对象解耦，独立成
-[POST `/v1/sandboxes/{id}/expose`](/api/sandboxes#expose) 端点（Spec 50）。
-进程内任意绑 `0.0.0.0:N` 后还会被动态发现自动认领（Spec 39），不调 expose
-也能列出。详见 [端口暴露](/concepts/expose-ports)。
-
-v1 字段 `expose_ports` 在 v2.0 已**移除**——既不在请求体接受、也不在响应里返回。
+::: tip 端口暴露
+端口暴露走独立的
+[POST `/v1/sandboxes/{id}/expose`](/api/sandboxes#expose) 端点。进程内任意绑
+`0.0.0.0:N` 后也会被动态发现自动认领,不调 expose 也能列出。详见
+[端口暴露](/concepts/expose-ports)。
 :::
 
 **响应**
