@@ -4,7 +4,7 @@
 
 > 本页是"我想验证一下平台能用"的最短路径。要做完整集成请看
 > [Agent SDK 第一个请求](./agent-sdk)(Python / TS / Go / C#)
-> 或 [sandboxctl CLI](#cli-备选)。
+> 或 [talon-sandbox CLI](#cli-备选)。
 
 ## 前置
 
