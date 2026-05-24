@@ -14,7 +14,8 @@ export default withMermaid(defineConfig({
     resolve: {
       alias: [
         { find: /^dayjs$/, replacement: resolve(dayjsRoot, 'esm/index.js') },
-        { find: /^dayjs\/plugin\/(.+)$/, replacement: resolve(dayjsRoot, 'esm/plugin/$1/index.js') },
+        // 兼容 import 'dayjs/plugin/isoWeek' 和 'dayjs/plugin/isoWeek.js' 两种写法
+        { find: /^dayjs\/plugin\/([^.]+?)(?:\.js)?$/, replacement: resolve(dayjsRoot, 'esm/plugin/$1/index.js') },
       ],
     },
     ssr: {
