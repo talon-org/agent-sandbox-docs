@@ -1,10 +1,10 @@
 ---
 layout: home
-title: Agent Sandbox Platform
+title: Talon Sandbox
 titleTemplate: AI agent 的在线沙箱
 
 hero:
-  name: "Agent Sandbox Platform"
+  name: "Talon Sandbox"
   text: "AI agent 的在线运行环境"
   tagline: 让 AI 在完全隔离的沙箱里写代码、跑命令、开浏览器、给项目出预览 URL —— 给每个 agent 一台真正可用的工作机。
   actions:

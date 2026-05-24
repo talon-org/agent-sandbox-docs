@@ -1,6 +1,6 @@
 # 反向代理配置
 
-Agent Sandbox Platform 的 sandbox-api 默认监听 `127.0.0.1:18080`，需要前置一个反向代理来提供：
+Talon Sandbox 的 sandbox-api 默认监听 `127.0.0.1:18080`，需要前置一个反向代理来提供：
 
 - HTTPS 终止和证书管理
 - WebSocket 升级透传（PTY / CDP / preview）

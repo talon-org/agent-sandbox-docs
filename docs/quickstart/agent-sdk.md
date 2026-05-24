@@ -5,7 +5,7 @@
 
 ## 前置
 
-- 一个能访问的 Agent Sandbox 实例(本机 Docker:`http://localhost:18080`,
+- 一个能访问的 Talon Sandbox 实例(本机 Docker:`http://localhost:18080`,
   或服务器自部署见 [Docker quickstart](./docker) / [systemd quickstart](./self-hosted))
 - 一个 API Key,形如 `ask_X_...`(login 后生成,或 bootstrap 时打印)
 - 网络:`network="allowlist"` 默认放 DNS + 配置好的白名单域;`"open"` 全

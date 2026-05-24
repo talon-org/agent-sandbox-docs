@@ -1,6 +1,6 @@
 ---
 title: Changelog
-description: Agent Sandbox Platform 版本更新记录
+description: Talon Sandbox 版本更新记录
 ---
 
 # Changelog

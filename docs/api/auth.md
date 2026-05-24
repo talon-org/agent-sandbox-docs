@@ -1,6 +1,6 @@
 # 认证 API
 
-Agent Sandbox Platform 支持两种认证方式：用户名/密码 Session（Web 控制台）和 API Key（程序调用）。
+Talon Sandbox 支持两种认证方式：用户名/密码 Session（Web 控制台）和 API Key（程序调用）。
 
 ## POST `/v1/auth/login` {#post-auth-login}
 

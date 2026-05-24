@@ -23,7 +23,7 @@ export default withMermaid(defineConfig({
     },
   },
 
-  title: 'Agent Sandbox Platform',
+  title: 'Talon Sandbox',
   description: 'AI agent 在线沙箱平台：让 AI 在隔离环境里写代码、跑命令、开浏览器、给项目出预览 URL',
   lang: 'zh-CN',
   cleanUrls: true,
@@ -33,7 +33,7 @@ export default withMermaid(defineConfig({
 
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }],
-    ['meta', { property: 'og:title', content: 'Agent Sandbox Platform' }],
+    ['meta', { property: 'og:title', content: 'Talon Sandbox' }],
     ['meta', { property: 'og:description', content: 'AI agent 在线沙箱平台：让 AI 在隔离环境里写代码、跑命令、开浏览器、给项目出预览 URL' }],
     ['meta', { property: 'og:type', content: 'website' }],
     ['meta', { name: 'theme-color', content: '#7aa2f7' }],
@@ -211,7 +211,7 @@ export default withMermaid(defineConfig({
 
     footer: {
       message: '基于 MIT License 发布',
-      copyright: `Copyright © 2025-${new Date().getFullYear()} Agent Sandbox Platform`,
+      copyright: `Copyright © 2025-${new Date().getFullYear()} Talon Sandbox`,
     },
 
     docFooter: {

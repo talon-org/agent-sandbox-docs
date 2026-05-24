@@ -80,7 +80,7 @@ sudo bash deploy/systemd/quickstart.sh
 安装完成后输出示例：
 
 ```
-✅  Agent Sandbox Platform 已启动
+✅  Talon Sandbox 已启动
 
 Console:   http://<server-ip>:18080/console/
 管理员:    admin

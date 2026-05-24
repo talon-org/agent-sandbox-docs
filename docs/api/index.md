@@ -1,6 +1,6 @@
 # API 参考概述
 
-Agent Sandbox Platform 提供 REST HTTP API，所有端点均以 `/v1/` 为前缀。
+Talon Sandbox 提供 REST HTTP API，所有端点均以 `/v1/` 为前缀。
 
 ## 基础 URL
 
