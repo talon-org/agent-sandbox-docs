@@ -146,12 +146,22 @@ curl 同时支持三种鉴权方式,本页用了最简单的 Bearer + API key。
 
 ## CLI 备选
 
-不想拼 curl?用 `sandboxctl`(在做,见 [Spec 46](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/superpowers/specs/2026-05-24-sandboxctl-cli-design.md)):
+不想拼 curl?用 `talon-sandbox` / `tsb`(短名),
+仓库:[talon-sandbox-cli](http://x.xgit.pro/dark/talon-sandbox-cli):
 
 ```bash
-sandboxctl create --image alpine-3.20 --cpu 2 --memory 4Gi --network allowlist --wait running -o id \
-  | xargs -I{} sandboxctl exec {} -- 'echo hi from sandbox && uname -a'
+# 一行起跑 + 暴露:
+SBX=$(tsb create --image alpine-3.20 --resources cpu=2,memory=4GiB --network allowlist --wait running -o id)
+tsb spawn $SBX "python3 -m http.server 8000"
+tsb expose $SBX 8000
+
+# 或一气呵成:
+tsb create --image alpine-3.20 --resources cpu=2,memory=4GiB --network allowlist \
+  --spawn "python3 -m http.server 8000" --expose 8000 --print-url
 ```
+
+旧 `sandboxctl`(主仓 cmd/sandboxctl/)已废弃,见
+[v1→v2 迁移指南](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/migration/v1-to-v2-sdk.md)。
 
 ## 完整 API
 
