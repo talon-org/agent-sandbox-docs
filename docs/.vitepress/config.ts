@@ -2,6 +2,14 @@ import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
 
 export default withMermaid(defineConfig({
+  vite: {
+    // mermaid 11 的间接依赖通过 .npmrc 的 public-hoist-pattern 暴露给 Vite,
+    // 让 vitepress-plugin-mermaid 自动加入的 optimizeDeps.include 能 resolve 到。
+    ssr: {
+      noExternal: ['mermaid', 'vitepress-plugin-mermaid'],
+    },
+  },
+
   title: 'Agent Sandbox Platform',
   description: 'AI agent 在线沙箱平台：让 AI 在隔离环境里写代码、跑命令、开浏览器、给项目出预览 URL',
   lang: 'zh-CN',
