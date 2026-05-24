@@ -150,18 +150,22 @@ lost     → destroyed (delete)
 
 ```json
 {
-  "idle_timeout_seconds": 300,
-  "ttl_seconds": 3600
+  "timeout": "5m",
+  "ttl": "1h"
 }
 ```
 
 | 字段 | 默认值 | 含义 |
 |---|---|---|
-| `idle_timeout_seconds` | 0（禁用） | sandbox 在 `running` 状态下无操作 N 秒后自动 pause |
-| `ttl_seconds` | 0（禁用） | sandbox 创建后 N 秒后自动 destroy（无论状态） |
+| `timeout` | 空（禁用） | sandbox 在 `running` 状态下无操作多久自动 pause（duration string：`30s` / `5m` / `2h` / `1d`） |
+| `ttl` | 空（禁用） | sandbox 创建后多久自动 destroy（duration string，无论状态） |
 
 ::: tip 推荐配置
-对于 AI agent 工作流，推荐设置 `idle_timeout_seconds: 300`（5 分钟）。agent 不活跃时自动 pause 节省资源，需要时 resume 恢复，无感知延迟。
+对于 AI agent 工作流，推荐设置 `timeout="5m"`。agent 不活跃时自动 pause 节省
+资源，需要时 resume 恢复，毫秒级延迟。
+
+v1 字段 `idle_timeout_seconds` / `ttl_seconds`（整数秒）仍兼容，但 v2 SDK 全部用
+duration 字符串。
 :::
 
 ## 并发操作

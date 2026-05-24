@@ -14,6 +14,12 @@ Without signed preview URLs you would need to give them your API key or create a
 
 ## Issue a token
 
+::: tip v2 SDK 推荐
+直接用 `sb.expose(port, sign=True, ttl="1h")` 拿到带 token 的 URL 一步到位
+（详见 [端口暴露](/concepts/expose-ports)）。下面的 `/preview-token` 端点是
+底层 wire 接口，SDK 不能用的场景再直接调。
+:::
+
 ```http
 POST /v1/sandboxes/{id}/preview-token
 Authorization: Bearer <your-api-key-or-jwt>

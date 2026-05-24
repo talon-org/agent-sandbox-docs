@@ -22,8 +22,7 @@ Content-Type: application/json
 {
   "command": ["pnpm", "dev", "--host", "0.0.0.0"],
   "env": ["PORT=3000", "NODE_ENV=development"],
-  "cwd": "myapp",
-  "expose_ports": [3000]
+  "cwd": "myapp"
 }
 ```
 
@@ -32,7 +31,15 @@ Content-Type: application/json
 | `command` | string[] | 是 | 命令 argv，`command[0]` 为可执行文件 |
 | `env` | string[] | 否 | 额外环境变量，`KEY=value` 格式 |
 | `cwd` | string | 否 | 相对 workspace 根目录的子路径；空 = workspace 根目录 |
-| `expose_ports` | int32[] | 否 | 声明对外暴露的端口（用于预览反向代理准入） |
+
+::: tip 端口暴露已独立
+v2 起，端口暴露从进程对象解耦，独立成
+[POST `/v1/sandboxes/{id}/expose`](/api/sandboxes#expose) 端点（Spec 50）。
+进程内任意绑 `0.0.0.0:N` 后还会被动态发现自动认领（Spec 39），不调 expose
+也能列出。详见 [端口暴露](/concepts/expose-ports)。
+
+v1 字段 `expose_ports` 在 v2.0 已**移除**——既不在请求体接受、也不在响应里返回。
+:::
 
 **响应**
 
@@ -47,9 +54,7 @@ Content-Type: application/json
   "state": "running",
   "exit_code": -1,
   "started_at": 1716480000,
-  "exited_at": 0,
-  "expose_ports": [3000],
-  "host_ports": { "3000": 32801 }
+  "exited_at": 0
 }
 ```
 
@@ -63,26 +68,6 @@ Content-Type: application/json
 | `exit_code` | int32 | 退出码；`-1` 表示被信号终止；进程运行中值不定 |
 | `started_at` | int64 | 启动时间（Unix 秒） |
 | `exited_at` | int64 | 退出时间（Unix 秒）；`0` 表示尚未退出 |
-| `expose_ports` | int32[] | 声明暴露的容器端口 |
-| `host_ports` | map | 容器端口 → host 端口映射（runc 模式有值；localprocess 模式为空） |
-
-### 预览 URL
-
-进程启动并声明了 `expose_ports` 后，可以通过预览反向代理访问：
-
-```
-# path-prefix 模式（默认）
-http(s)://<api-host>/v1/sandboxes/<sbx_id>/preview/<port>/
-
-# 例：访问 sandbox 内 3000 端口
-http://localhost:18080/v1/sandboxes/sbx_xxx/preview/3000/
-```
-
-Subdomain 模式（需要配置 `PreviewDomainSuffix`）：
-
-```
-https://<sbx_id>-<port>.<preview-domain>/
-```
 
 ---
 
