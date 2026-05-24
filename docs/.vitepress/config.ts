@@ -45,6 +45,8 @@ export default defineConfig({
         text: '核心概念',
         items: [
           { text: 'Sandbox 生命周期', link: '/concepts/sandbox-lifecycle' },
+          { text: '端口暴露 (expose)', link: '/concepts/expose-ports' },
+          { text: '签名 Preview URL', link: '/concepts/signed-preview' },
         ],
       },
       {
@@ -97,6 +99,8 @@ export default defineConfig({
           text: '核心概念',
           items: [
             { text: 'Sandbox 生命周期', link: '/concepts/sandbox-lifecycle' },
+            { text: '端口暴露 (expose)', link: '/concepts/expose-ports' },
+            { text: '签名 Preview URL', link: '/concepts/signed-preview' },
           ],
         },
       ],
