@@ -43,6 +43,8 @@ tags:
     description: PTY (interactive terminal) over WebSocket
   - name: browser
     description: Headless Chromium browser sessions
+  - name: expose
+    description: Explicit port exposure management (Spec 50) — expose, unexpose, list
 
 paths:
   # ─── Auth ─────────────────────────────────────────────────────────────────
@@ -587,6 +589,253 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  # ─── Signed preview URL ───────────────────────────────────────────────────
+
+  /v1/sandboxes/{id}/preview-token:
+    post:
+      operationId: createPreviewToken
+      tags: [sandboxes]
+      summary: Issue a signed preview URL token (Spec 48)
+      description: |
+        Issues a short-lived, self-contained JWT that lets anyone holding it access
+        the preview proxy for a specific `(sandbox_id, port)` pair — no account or
+        API key required on the recipient side.
+
+        The token is passed as `?token=<jwt>` on the preview URL:
+
+        ```
+        https://api.example.com/v1/sandboxes/sbx_xxx/preview/5173/?token=eyJ...
+        ```
+
+        or with the subdomain pattern:
+
+        ```
+        https://sbx_xxx-5173.preview.example.com/?token=eyJ...
+        ```
+
+        **Security:**
+        - The token is scoped to exactly `(sandbox_id, port)` and cannot access
+          other sandboxes or ports.
+        - The token cannot be used to call any control-plane API — only the preview
+          proxy accepts it.
+        - The token expires after `ttl_seconds` (default 3 600 s, max 86 400 s).
+        - Revocation is not implemented; prefer short TTLs for sensitive use cases.
+        - The token is stripped from the upstream URL before forwarding so it does
+          not appear in the sandbox app's own request logs.
+
+        **Permission:** developer or owner (viewer cannot issue tokens — prevents
+        read-only users from distributing preview access).
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewTokenRequest'
+      responses:
+        '201':
+          description: Token issued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreviewTokenResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # ─── Expose (Spec 50) ────────────────────────────────────────────────────────
+
+  /v1/sandboxes/{id}/expose:
+    post:
+      operationId: exposePort
+      tags: [expose]
+      summary: Explicitly expose a port and get a preview URL (Spec 50)
+      description: |
+        Registers a container port in the explicit allowlist so it can be reached
+        via the preview proxy — even if no process is currently listening on that
+        port. Once a process binds `0.0.0.0:{port}`, traffic begins flowing
+        immediately.
+
+        **Idempotent:** calling this endpoint again with the same `(port,
+        subdomain)` pair returns `200` with the same URL rather than an error.
+        Changing the subdomain for the same port updates the reservation.
+
+        **Subdomain:** an auto-generated prefix is used when `subdomain` is
+        omitted (format: `sb-{8hexchars}-{port}`). Custom subdomains are
+        unique across all sandboxes; a conflict with another sandbox returns
+        `409 Conflict`.
+
+        **Signed URL:** when `sign=true` the response URL includes a `?token=`
+        JWT (same mechanism as `POST /preview-token`). The token is scoped to
+        `(sandbox, port)` and expires after `ttl` (default `1h`, max `24h`).
+
+        **RBAC:** developer or owner only. Viewer cannot expose ports.
+
+        **Quota:** a sandbox may expose at most 16 ports explicitly. Attempting
+        to exceed this limit returns `422 Unprocessable Entity`.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExposeRequest'
+      responses:
+        '200':
+          description: Port registered and preview URL returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposeResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: Subdomain already used by another sandbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+          description: Maximum number of exposed ports per sandbox reached (16)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      operationId: listExposedPorts
+      tags: [expose]
+      summary: List all exposed ports for a sandbox (Spec 50)
+      description: |
+        Returns ports from two sources:
+
+        - **explicit** — registered via `POST /v1/sandboxes/{id}/expose`
+        - **dynamic** — discovered by the Spec 39 sidecar (actively listening
+          processes reported in real time)
+
+        Each entry includes a `source` field so callers can distinguish the two.
+        Viewer role can call this endpoint.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+      responses:
+        '200':
+          description: List of exposed ports (may be empty)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposedPortList'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /v1/sandboxes/{id}/expose/{port}:
+    delete:
+      operationId: unexposePort
+      tags: [expose]
+      summary: Remove an explicit port exposure (Spec 50)
+      description: |
+        Removes the port from the explicit allowlist. Active processes that were
+        already listening are not affected (they continue receiving traffic via
+        dynamic discovery). Any signed token previously issued for this
+        `(sandbox, port)` pair is **not** revoked — it continues to work until
+        it expires naturally.
+
+        **RBAC:** developer or owner only.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - name: port
+          in: path
+          required: true
+          description: Container port to un-expose (1–65535)
+          schema:
+            type: integer
+            format: int32
+            minimum: 1
+            maximum: 65535
+            example: 5173
+      responses:
+        '204':
+          description: Port removed from explicit expose list
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          description: Port was not explicitly exposed on this sandbox
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /v1/sandboxes/{id}/preview/{port}/{rest}:
+    get:
+      operationId: previewProxy
+      tags: [sandboxes]
+      summary: Reverse-proxy a port inside the sandbox
+      description: |
+        Proxies HTTP traffic to the specified port inside the sandbox. Requires
+        either standard auth (Bearer/cookie) **or** a signed preview token via
+        `?token=`.
+
+        The `?token=` parameter is stripped before forwarding to the upstream so
+        it does not leak into the sandbox app's request logs.
+      parameters:
+        - $ref: '#/components/parameters/sandboxId'
+        - name: port
+          in: path
+          required: true
+          description: Container port to proxy to (1–65535)
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 65535
+            example: 5173
+        - name: rest
+          in: path
+          required: true
+          description: Path to forward to the upstream
+          schema:
+            type: string
+        - name: token
+          in: query
+          required: false
+          description: |
+            Signed preview token issued by `POST /v1/sandboxes/{id}/preview-token`.
+            When provided, standard auth (Bearer/cookie) is not required.
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+        - {}   # token query param path has no global security requirement
+      responses:
+        '200':
+          description: Proxied response from the upstream
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '502':
+          description: Upstream unavailable
+
 # ─── Components ───────────────────────────────────────────────────────────────
 
 components:
@@ -798,6 +1047,70 @@ components:
 
     CreateSandboxRequest:
       type: object
+      description: |
+        Request body for `POST /v1/sandboxes`. Supports **two styles** that must
+        not be mixed in the same request — the server returns `400` if both v1
+        and v2 resource fields are present simultaneously.
+
+        ## v1 style (original, fully backward-compatible)
+
+        ```json
+        {
+          "image_id": "img_abc",
+          "cpu_millis": 2000,
+          "memory_bytes": 4294967296,
+          "idle_timeout_seconds": 1800,
+          "ttl_seconds": 21600,
+          "network_policy": "restricted-egress"
+        }
+        ```
+
+        ## v2 style (SDK v2 recommended, Spec 50)
+
+        ```json
+        {
+          "image_id": "img_abc",
+          "resources": { "cpu": 2, "memory": "4GiB", "disk": "10GiB" },
+          "timeout": "30m",
+          "ttl": "6h",
+          "network": "allowlist",
+          "env": { "NODE_ENV": "development" },
+          "labels": { "project": "agent-x" }
+        }
+        ```
+
+        The server normalises v2 fields into the v1 internal representation
+        before processing. Worker-side proto is unchanged.
+
+        ### Size format (v2 `memory` / `disk`)
+
+        Accepted by `resources.memory` and `resources.disk`:
+
+        | Pattern | Example | Notes |
+        |---------|---------|-------|
+        | `{n}B` | `512B` | bytes |
+        | `{n}KiB` / `{n}MiB` / `{n}GiB` / `{n}TiB` | `4GiB` | IEC binary (1024-based) |
+        | `{n}KB` / `{n}MB` / `{n}GB` / `{n}TB` | `10GB` | SI decimal (1000-based) |
+        | bare integer | `4294967296` | treated as bytes |
+
+        Floating-point coefficients are accepted (`1.5GiB`). Unit matching is
+        case-insensitive.
+
+        ### Duration format (v2 `timeout` / `ttl` / expose `ttl`)
+
+        Extends Go's `time.ParseDuration`:
+
+        | Suffix | Unit | Example |
+        |--------|------|---------|
+        | `ms` | millisecond | `100ms` |
+        | `s` | second | `30s` |
+        | `m` | minute | `5m` |
+        | `h` | hour | `2h`, `1.5h` |
+        | `d` | day (24 h) | `1d`, `2.5d` |
+        | `w` | week (7 d) | `1w` |
+        | bare integer | second | `3600` |
+
+        Month (`M`) and year (`y`) are not supported (ambiguous).
       properties:
         profile:
           type: string
@@ -806,18 +1119,22 @@ components:
         image_id:
           type: string
           description: Base image ID. Omit to use the current default image.
+
+        # ── v1 style fields ──────────────────────────────────────────────────
         cpu_millis:
           type: integer
           format: int64
-          description: CPU allocation in milli-CPUs. 0 = worker default. Negative values are rejected.
+          description: |
+            **(v1 style)** CPU allocation in milli-CPUs. 0 = worker default.
+            Mutually exclusive with `resources.cpu`.
           minimum: 0
           example: 2000
         memory_bytes:
           type: integer
           format: int64
           description: |
-            Memory allocation in bytes. 0 = worker default.
-            The SDK accepts human-readable strings like "4GiB" and converts them.
+            **(v1 style)** Memory allocation in bytes. 0 = worker default.
+            Mutually exclusive with `resources.memory`.
           minimum: 0
           example: 4294967296
         pids_limit:
@@ -829,17 +1146,22 @@ components:
           type: integer
           format: int64
           minimum: 0
-          description: Auto-stop after N idle seconds. 0 = disabled.
+          description: |
+            **(v1 style)** Auto-stop after N idle seconds. 0 = disabled.
+            Mutually exclusive with `timeout`.
         ttl_seconds:
           type: integer
           format: int64
           minimum: 0
-          description: Hard TTL in seconds from creation. 0 = disabled.
+          description: |
+            **(v1 style)** Hard TTL in seconds from creation. 0 = disabled.
+            Mutually exclusive with `ttl`.
         network_policy:
           type: string
           enum: [offline, restricted-egress, full-egress, allowlist, open, sealed, deny]
           description: |
-            Network egress policy. Omit to use the worker default.
+            **(v1 style)** Network egress policy. Omit to use the worker default.
+            Mutually exclusive with `network`.
 
             Canonical values:
             - `offline` — no outbound network access
@@ -850,6 +1172,50 @@ components:
             - `allowlist` → `restricted-egress`
             - `open` → `full-egress`
             - `sealed`, `deny` → `offline`
+
+        # ── v2 style fields (Spec 50) ────────────────────────────────────────
+        resources:
+          $ref: '#/components/schemas/ResourcesV2'
+        timeout:
+          type: string
+          description: |
+            **(v2 style)** Idle timeout as a duration string (e.g. `"30m"`,
+            `"2h"`, `"1d"`). Mutually exclusive with `idle_timeout_seconds`.
+          x-format: duration
+          example: "30m"
+        ttl:
+          type: string
+          description: |
+            **(v2 style)** Hard TTL from creation as a duration string
+            (e.g. `"6h"`, `"2d"`). Mutually exclusive with `ttl_seconds`.
+          x-format: duration
+          example: "6h"
+        network:
+          type: string
+          enum: [allowlist, open, sealed, offline, restricted-egress, full-egress]
+          description: |
+            **(v2 style)** Network policy alias. Accepts the same values as
+            `network_policy` (canonical names and aliases).
+            Mutually exclusive with `network_policy`.
+          example: allowlist
+        env:
+          type: object
+          description: |
+            **(v2 style)** Environment variables to inject at sandbox startup.
+            Map of `{ "KEY": "value" }`.
+          additionalProperties:
+            type: string
+          example:
+            NODE_ENV: development
+            PORT: "3000"
+        labels:
+          type: object
+          description: Arbitrary key-value labels attached to the sandbox.
+          additionalProperties:
+            type: string
+          example:
+            project: agent-x
+
         secrets:
           type: array
           description: Secret bindings to inject into the sandbox at creation time.
@@ -1001,6 +1367,43 @@ components:
           type: integer
           description: Total number of entries in the directory (before pagination)
 
+    # ── Signed preview token (Spec 48) ──────────────────────────────────────
+
+    PreviewTokenRequest:
+      type: object
+      required: [port]
+      properties:
+        port:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 65535
+          description: Container port the token authorises access to
+          example: 5173
+        ttl_seconds:
+          type: integer
+          format: int64
+          minimum: 1
+          maximum: 86400
+          default: 3600
+          description: |
+            Token lifetime in seconds. Default 3 600 (1 hour). Maximum 86 400 (24 hours).
+            Values above the maximum are silently clamped.
+
+    PreviewTokenResponse:
+      type: object
+      required: [token, expires_at]
+      properties:
+        token:
+          type: string
+          description: Signed JWT. Pass as `?token=<value>` on preview URLs.
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        expires_at:
+          type: string
+          format: date-time
+          description: RFC 3339 expiry timestamp (UTC)
+          example: '2026-05-24T15:04:05Z'
+
     # ── Browser ─────────────────────────────────────────────────────────────
 
     Browser:
@@ -1030,6 +1433,139 @@ components:
           type: integer
           format: int32
           description: Host port used for DNAT (runc adapter only — diagnostics only)
+
+    # ── v2 Resources (Spec 50) ──────────────────────────────────────────────
+
+    ResourcesV2:
+      type: object
+      description: |
+        Nested resource declaration for v2-style `POST /v1/sandboxes`.
+
+        `cpu` accepts a floating-point core count (e.g. `0.5` for 500m CPU).
+        `memory` and `disk` accept a Size string (see `CreateSandboxRequest`
+        description for the full format table).
+      properties:
+        cpu:
+          type: number
+          format: double
+          minimum: 0
+          description: CPU allocation in cores (floating point). 0 = worker default.
+          example: 2
+        memory:
+          type: string
+          description: Memory allocation as a Size string.
+          x-format: size
+          example: "4GiB"
+        disk:
+          type: string
+          description: Disk allocation as a Size string.
+          x-format: size
+          example: "10GiB"
+
+    # ── Expose (Spec 50) ────────────────────────────────────────────────────
+
+    ExposeRequest:
+      type: object
+      required: [port]
+      description: |
+        Request body for `POST /v1/sandboxes/{id}/expose`.
+      properties:
+        port:
+          type: integer
+          format: int32
+          minimum: 1
+          maximum: 65535
+          description: Container port to expose.
+          example: 5173
+        sign:
+          type: boolean
+          default: false
+          description: |
+            When `true`, issue a signed preview token (Spec 48) and append
+            `?token=<jwt>` to the returned URL. The token expires after `ttl`.
+        ttl:
+          type: string
+          description: |
+            Token lifetime as a Duration string (e.g. `"1h"`, `"30m"`).
+            Only effective when `sign=true`. Defaults to `"1h"`. Maximum `"24h"`.
+          x-format: duration
+          example: "1h"
+        subdomain:
+          type: string
+          pattern: '^[a-z0-9-]{1,40}$'
+          description: |
+            Custom subdomain prefix for the preview URL. Must match
+            `[a-z0-9-]{1,40}`. Auto-generated as `sb-{8hexchars}-{port}` when
+            omitted. Conflicts with another sandbox return `409 Conflict`.
+          example: my-app
+
+    ExposeResponse:
+      type: object
+      required: [port, url, signed, expires_at]
+      description: |
+        Response body for `POST /v1/sandboxes/{id}/expose`.
+      properties:
+        port:
+          type: integer
+          format: int32
+          description: The port that was exposed.
+          example: 5173
+        url:
+          type: string
+          description: |
+            Preview URL for this port. When `signed=true` the URL includes
+            `?token=<jwt>`.
+          example: "https://my-app.preview.example.com?token=eyJ..."
+        signed:
+          type: boolean
+          description: Whether the URL includes a signed preview token.
+        expires_at:
+          type: string
+          description: |
+            RFC 3339 expiry timestamp when `signed=true`; empty string otherwise.
+          example: "2026-05-24T15:04:05Z"
+
+    ExposedPortEntry:
+      type: object
+      required: [port, url, source]
+      description: A single port entry returned by `GET /v1/sandboxes/{id}/expose`.
+      properties:
+        port:
+          type: integer
+          format: int32
+          description: Container port number.
+          example: 5173
+        url:
+          type: string
+          description: Preview URL for this port.
+          example: "https://sb-a1b2c3d4-5173.preview.example.com"
+        signed:
+          type: boolean
+          description: True if the URL includes a signed preview token.
+        expires_at:
+          type: string
+          description: RFC 3339 expiry when signed; omitted otherwise.
+          example: "2026-05-24T15:04:05Z"
+        created_at:
+          type: string
+          description: RFC 3339 time when explicitly exposed; omitted for dynamic ports.
+          example: "2026-05-24T12:00:00Z"
+        source:
+          type: string
+          enum: [explicit, dynamic]
+          description: |
+            - `explicit` — registered via `POST /v1/sandboxes/{id}/expose`
+            - `dynamic` — discovered by the Spec 39 sidecar (process is actively listening)
+
+    ExposedPortList:
+      type: object
+      required: [ports]
+      description: Response body for `GET /v1/sandboxes/{id}/expose`.
+      properties:
+        ports:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExposedPortEntry'
 
     # ── Errors ──────────────────────────────────────────────────────────────
 
