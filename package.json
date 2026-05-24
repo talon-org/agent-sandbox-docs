@@ -7,16 +7,18 @@
   "scripts": {
     "dev": "vitepress dev docs",
     "build": "vitepress build docs",
-    "preview": "vitepress preview docs",
+    "preview": "pnpm run build && wrangler dev",
     "sync:docs": "bash scripts/sync-from-main-repo.sh",
-    "gen:api": "tsx scripts/gen-api-ref.ts"
+    "gen:api": "tsx scripts/gen-api-ref.ts",
+    "deploy": "pnpm run build && wrangler deploy"
   },
   "devDependencies": {
     "mermaid": "^11.15.0",
     "tsx": "^4.19.2",
     "vitepress": "^1.6.3",
     "vitepress-plugin-mermaid": "^2.0.17",
-    "vue": "^3.5.13"
+    "vue": "^3.5.13",
+    "wrangler": "^4.94.0"
   },
   "engines": {
     "node": ">=20",
