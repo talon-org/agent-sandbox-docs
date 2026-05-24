@@ -1,10 +1,22 @@
 import { defineConfig } from 'vitepress'
 import { withMermaid } from 'vitepress-plugin-mermaid'
+import { fileURLToPath } from 'node:url'
+import { resolve, dirname } from 'node:path'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+const dayjsRoot = resolve(__dirname, '../../node_modules/dayjs')
 
 export default withMermaid(defineConfig({
   vite: {
-    // mermaid 11 的间接依赖通过 .npmrc 的 public-hoist-pattern 暴露给 Vite,
-    // 让 vitepress-plugin-mermaid 自动加入的 optimizeDeps.include 能 resolve 到。
+    // mermaid 11 间接依赖 dayjs。dayjs 的 package.json 没有 "module" / "exports"
+    // 字段,Vite 默认拿 CJS bundle (dayjs.min.js) 然后 `import dayjs from 'dayjs'`
+    // 报 "does not provide an export named 'default'"。强制 alias 到 ESM 入口。
+    resolve: {
+      alias: [
+        { find: /^dayjs$/, replacement: resolve(dayjsRoot, 'esm/index.js') },
+        { find: /^dayjs\/plugin\/(.+)$/, replacement: resolve(dayjsRoot, 'esm/plugin/$1/index.js') },
+      ],
+    },
     ssr: {
       noExternal: ['mermaid', 'vitepress-plugin-mermaid'],
     },
