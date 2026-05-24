@@ -55,8 +55,7 @@ PROC=$(curl -fsS -X POST "$BASE/v1/sandboxes/$SBX/processes" \
   -H "Content-Type: application/json" \
   -d '{
     "command":["python3","-m","http.server","8000"],
-    "cwd":"/workspace",
-    "expose_ports":[8000]
+    "cwd":"/workspace"
   }' | jq -r .id)
 
 echo "Process: $PROC"
@@ -68,18 +67,41 @@ curl -fsS "$BASE/v1/sandboxes/$SBX/processes/$PROC/logs?tail=20" \
 
 ### 3. 暴露(preview)
 
-`processes` 创建时 `expose_ports: [8000]` 平台会自动 DNAT,通过
-preview 域转发到 sandbox 内部 8000:
+显式 expose 端口(v2 一等公民端点):
 
 ```bash
-curl -fsS "$BASE/v1/sandboxes/$SBX" \
+URL=$(curl -fsS -X POST "$BASE/v1/sandboxes/$SBX/expose" \
   -H "Authorization: Bearer $KEY" \
-  | jq '.preview_urls'
-# → [{"port":8000,"url":"http://sbx-xxxxxxxx-8000.preview.example.com"}]
+  -H "Content-Type: application/json" \
+  -d '{"port": 8000}' | jq -r .url)
+
+echo "Preview: $URL"
+# → http://sb-abc1d234-8000.preview.example.com
 ```
 
-也支持动态端口发现——sandbox 内任意进程绑 `0.0.0.0:N` 后,平台自动
-认领并返回 preview URL,见 [概念:端口暴露](../concepts/sandbox-lifecycle#preview)。
+签名 URL(分享给第三方,自动过期):
+
+```bash
+curl -fsS -X POST "$BASE/v1/sandboxes/$SBX/expose" \
+  -H "Authorization: Bearer $KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"port": 8000, "sign": true, "ttl": "1h"}' | jq -r .url
+# → http://sb-abc1d234-8000.preview.example.com/?token=eyJ...
+```
+
+也支持**动态端口发现**——sandbox 内任意进程绑 `0.0.0.0:N` 后平台自动认领,
+不调 expose 端点也能访问。explicit 和 dynamic 两种 source 一起列:
+
+```bash
+curl -fsS "$BASE/v1/sandboxes/$SBX/expose" \
+  -H "Authorization: Bearer $KEY" | jq .
+# {"ports": [
+#   {"port":8000, "url":"...", "source":"explicit", "signed":false},
+#   {"port":3000, "url":"...", "source":"dynamic", "signed":false}
+# ]}
+```
+
+详见 [概念:端口暴露](../concepts/expose-ports)。
 
 ## 收尾
 
