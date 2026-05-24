@@ -8,18 +8,29 @@
 4. 读取进程日志
 5. 销毁 sandbox
 
-::: tip 官方 SDK 已发布
-四语言 SDK 已经发布,推荐直接用,比 raw HTTP 更短更安全:
+::: tip 官方 SDK(v2,talon-sandbox)
+四语言 SDK + CLI 已发布,推荐直接用,比 raw HTTP 更短更安全:
 
 | 语言 | 安装 | 仓库 |
 |---|---|---|
-| Python | `pip install agent-sandbox` | [agent-sandbox-sdk-python](http://x.xgit.pro/dark/agent-sandbox-sdk-python) |
-| TypeScript | `npm install @agent-sandbox/sdk` | [agent-sandbox-sdk-typescript](http://x.xgit.pro/dark/agent-sandbox-sdk-typescript) |
-| Go | `go get x.xgit.pro/dark/agent-sandbox-sdk-go` | [agent-sandbox-sdk-go](http://x.xgit.pro/dark/agent-sandbox-sdk-go) |
-| .NET | `dotnet add package AgentSandbox.Sdk` | [agent-sandbox-sdk-dotnet](http://x.xgit.pro/dark/agent-sandbox-sdk-dotnet) |
+| Python | `pip install talon-sandbox` | [talon-sandbox-sdk-python](http://x.xgit.pro/dark/talon-sandbox-sdk-python) |
+| TypeScript | `npm install talon-sandbox` | [talon-sandbox-sdk-typescript](http://x.xgit.pro/dark/talon-sandbox-sdk-typescript) |
+| Go | `go get x.xgit.pro/dark/talon-sandbox-sdk-go` | [talon-sandbox-sdk-go](http://x.xgit.pro/dark/talon-sandbox-sdk-go) |
+| .NET | `dotnet add package TalonSandbox.Sdk` | [talon-sandbox-sdk-dotnet](http://x.xgit.pro/dark/talon-sandbox-sdk-dotnet) |
+| CLI | `brew install talon-sandbox`(规划) | [talon-sandbox-cli](http://x.xgit.pro/dark/talon-sandbox-cli) |
 
-下面示例里 Python / TS 代码段用的是 raw `httpx` / `fetch` 帮你理解 HTTP 契约;
-**实际项目用 SDK**(`sb.processes.start({...})` 比拼 URL+headers 短一半)。
+下面示例 Python / TS 代码段用 raw `httpx` / `fetch` 帮你理解 HTTP 契约;
+**实际项目用 SDK 更短**,例如:
+
+```python
+from talon_sandbox import Sandbox
+async with Sandbox.create(image="alpine-3.20", network="allowlist") as sb:
+    await sb.spawn("python3 -m http.server 8000")
+    print(await sb.expose(8000))
+```
+
+v1 SDK(`agent-sandbox`)已废弃,见
+[v1→v2 迁移指南](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/migration/v1-to-v2-sdk.md)。
 :::
 
 ## 前置条件

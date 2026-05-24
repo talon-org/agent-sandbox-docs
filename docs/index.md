@@ -42,25 +42,36 @@ features:
     details: 每个 tenant 独立 API key、quota、secrets 注入。所有操作写入审计日志，支持合规查询。
 ---
 
-## 5 种接入方式
+## 6 种接入方式
 
-平台暴露统一 REST + WebSocket,你可以选最舒服的一条:
+平台暴露统一 REST + WebSocket,SDK 全部对齐 v2 表层(`Sandbox.create()` 一行
+拉起、`sb.expose(port)` 一等公民、`resources={"cpu":2, "memory":"4GiB"}`
+字符串单位、`run`/`spawn` 命令语义分离)。选你顺手的:
 
 | 方式 | 适合 | 起点 |
 |---|---|---|
 | **curl 直调** | 试一下 / shell 脚本 / CI | [curl 30 秒上手](/quickstart/curl) |
-| **Python SDK** `agent-sandbox` | AI agent 主流生态、数据脚本 | `pip install git+http://x.xgit.pro/dark/agent-sandbox-sdk-python.git` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-python)) |
-| **TypeScript SDK** `@agent-sandbox/sdk` | 浏览器扩展 / Node 后端 / Electron | `npm install http://x.xgit.pro/dark/agent-sandbox-sdk-typescript.git` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-typescript)) |
-| **Go SDK** | 后端服务 / DevOps 工具 | `GOPRIVATE=x.xgit.pro go get x.xgit.pro/dark/agent-sandbox-sdk-go@latest` ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-go)) |
-| **.NET SDK** `AgentSandbox.Sdk` | Windows 后端 / 企业 .NET 栈 | git clone + `dotnet pack` + 本地 NuGet feed ([repo](http://x.xgit.pro/dark/agent-sandbox-sdk-dotnet)) |
-| **sandboxctl CLI** | 现场运维 / agent fork-exec / shell 习惯 | `cd cmd/sandboxctl && go install .`(P1 已发,P2/P3 见 [Spec 46](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/superpowers/specs/2026-05-24-sandboxctl-cli-design.md)) |
+| **Python SDK** `talon-sandbox` | AI agent 主流生态、数据脚本 | `pip install git+http://x.xgit.pro/dark/talon-sandbox-sdk-python.git` ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-python)) |
+| **TypeScript SDK** `talon-sandbox` | 浏览器扩展 / Node 后端 / Electron | `npm install http://x.xgit.pro/dark/talon-sandbox-sdk-typescript.git` ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-typescript)) |
+| **Go SDK** | 后端服务 / DevOps 工具 | `GOPRIVATE=x.xgit.pro go get x.xgit.pro/dark/talon-sandbox-sdk-go@latest` ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-go)) |
+| **.NET SDK** `TalonSandbox.Sdk` | Windows 后端 / 企业 .NET 栈 | git clone + `dotnet pack` + 本地 NuGet feed ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-dotnet)) |
+| **CLI** `talon-sandbox` / `tsb` | 现场运维 / agent fork-exec / shell 习惯 | 二进制 release([talon-sandbox-cli](http://x.xgit.pro/dark/talon-sandbox-cli)),`brew install talon-sandbox`(规划) |
 
-五条路径语义同步——OpenAPI 是 source of truth([api/openapi.yaml](/openapi.yaml))。
+六条路径语义同步——OpenAPI 是 source of truth([api/openapi.yaml](/openapi.yaml))。
 
-::: tip 注意
-SDK 包目前**未发布**到 PyPI / npm / NuGet,从内部 Gitea 仓直装。切 v1.0 GA 后
-会发到公开 registry,届时改成短命令:`pip install agent-sandbox` /
-`npm install @agent-sandbox/sdk` / `dotnet add package AgentSandbox.Sdk`。
+::: tip SDK 包发布状态
+SDK / CLI 目前**未发布**到公开 registry(PyPI / npm / NuGet / Homebrew),
+从内部 Gitea 仓直装。商业化 GA 后会发,届时改成短命令:`pip install
+talon-sandbox` / `npm install talon-sandbox` / `dotnet add package
+TalonSandbox.Sdk` / `brew install talon-sandbox`。
+:::
+
+::: warning v1 SDK 已废弃
+`agent-sandbox` / `@agent-sandbox/sdk` / `agent-sandbox-sdk-go` /
+`AgentSandbox.Sdk` 标 deprecated,仅接 P0 安全 fix,**新代码请用
+`talon-sandbox`**。
+迁移指南:[v1 → v2 SDK](http://x.xgit.pro/dark/agent-sandbox-platform/src/branch/main/docs/migration/v1-to-v2-sdk.md)
+(典型项目 30 分钟,主要改 import 和 6 个 API 名字)。
 :::
 
 ## 部署路径
