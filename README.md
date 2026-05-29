@@ -2,9 +2,9 @@
 
 [English](#english) | 中文
 
-这是 [Agent Sandbox Platform](http://x.xgit.pro/dark/agent-sandbox-platform) 的官方帮助文档站，使用 VitePress 构建，部署在 Cloudflare Pages。
+这是 [Agent Sandbox Platform](https://github.com/talon-org/agent-sandbox-platform) 的官方帮助文档站，使用 VitePress 构建，部署在 Cloudflare Pages。
 
-**主仓库**: `/Users/dark/WebstormProjects/agent-sandbox-platform`（只读引用）  
+**主仓库**: [talon-org/agent-sandbox-platform](https://github.com/talon-org/agent-sandbox-platform)  
 **文档站仓库**: 本仓库（独立维护）
 
 ## 本地开发
@@ -53,9 +53,9 @@ scripts/
 
 ## English
 
-This is the official documentation site for [Agent Sandbox Platform](http://x.xgit.pro/dark/agent-sandbox-platform), built with VitePress and deployed on Cloudflare Pages.
+This is the official documentation site for [Agent Sandbox Platform](https://github.com/talon-org/agent-sandbox-platform), built with VitePress and deployed on Cloudflare Pages.
 
-**Main repo**: `/Users/dark/WebstormProjects/agent-sandbox-platform` (read-only reference)  
+**Main repo**: [talon-org/agent-sandbox-platform](https://github.com/talon-org/agent-sandbox-platform) (read-only reference)  
 **This repo**: documentation only (maintained separately)
 
 ### Local dev

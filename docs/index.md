@@ -63,19 +63,16 @@ features:
 | 方式 | 适合 | 起点 |
 |---|---|---|
 | **curl 直调** | 试一下 / shell 脚本 / CI | [curl 30 秒上手](/quickstart/curl) |
-| **Python SDK** `talon-sandbox` | AI agent 主流生态、数据脚本 | `pip install git+http://x.xgit.pro/dark/talon-sandbox-sdk-python.git` ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-python)) |
-| **TypeScript SDK** `talon-sandbox` | 浏览器扩展 / Node 后端 / Electron | `npm install http://x.xgit.pro/dark/talon-sandbox-sdk-typescript.git` ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-typescript)) |
-| **Go SDK** | 后端服务 / DevOps 工具 | `GOPRIVATE=x.xgit.pro go get x.xgit.pro/dark/talon-sandbox-sdk-go@latest` ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-go)) |
-| **.NET SDK** `TalonSandbox.Sdk` | Windows 后端 / 企业 .NET 栈 | git clone + `dotnet pack` + 本地 NuGet feed ([repo](http://x.xgit.pro/dark/talon-sandbox-sdk-dotnet)) |
-| **CLI** `talon-sandbox` / `tsb` | 现场运维 / agent fork-exec / shell 习惯 | 二进制 release([talon-sandbox-cli](http://x.xgit.pro/dark/talon-sandbox-cli)),`brew install talon-sandbox`(规划) |
+| **Python SDK** `talon-sandbox` | AI agent 主流生态、数据脚本 | `pip install talon-sandbox` ([repo](https://github.com/talon-org/talon-sandbox-sdk-python)) |
+| **TypeScript SDK** `talon-sandbox` | 浏览器扩展 / Node 后端 / Electron | `npm install talon-sandbox` ([repo](https://github.com/talon-org/talon-sandbox-sdk-typescript)) |
+| **Go SDK** | 后端服务 / DevOps 工具 | `go get github.com/talon-org/talon-sandbox-sdk-go@latest` ([repo](https://github.com/talon-org/talon-sandbox-sdk-go)) |
+| **.NET SDK** `TalonSandbox.Sdk` | Windows 后端 / 企业 .NET 栈 | `dotnet add package TalonSandbox.Sdk` ([repo](https://github.com/talon-org/talon-sandbox-sdk-dotnet)) |
+| **CLI** `talon-sandbox` / `tsb` | 现场运维 / agent fork-exec / shell 习惯 | 二进制 release([talon-sandbox-cli](https://github.com/talon-org/talon-sandbox-cli)),`brew install talon-sandbox`(规划) |
 
 六条路径语义同步——OpenAPI 是 source of truth([api/openapi.yaml](/openapi.yaml))。
 
 ::: tip SDK 包发布状态
-SDK / CLI 目前**未发布**到公开 registry(PyPI / npm / NuGet / Homebrew),
-从内部 Gitea 仓直装。商业化 GA 后会发,届时改成短命令:`pip install
-talon-sandbox` / `npm install talon-sandbox` / `dotnet add package
-TalonSandbox.Sdk` / `brew install talon-sandbox`。
+SDK / CLI 目前处于 beta 阶段，部分 registry（PyPI / npm / NuGet / Homebrew）发布状态见各 repo 说明。GA 后全平台正式发布。
 :::
 
 ## 部署路径
@@ -115,4 +112,4 @@ Docker Compose 使用 `localprocess` adapter,sandbox 进程与 worker 共享 PID
 └─────────────────────────────────────────────────────┘
 ```
 
-详细架构文档见主仓 `docs/architecture/`。
+详细架构文档见 [GitHub 主仓](https://github.com/talon-org/agent-sandbox-platform)。

@@ -2,10 +2,10 @@
 
 ## 1. Push 到 GitHub / Gitea
 
-确保代码已推送到 `http://x.xgit.pro/dark/agent-sandbox-docs.git`（或你的 GitHub repo）。
+确保代码已推送到 GitHub（`talon-org/agent-sandbox-docs`）。
 
 ```bash
-git remote add origin http://x.xgit.pro/dark/agent-sandbox-docs.git
+git remote add origin https://github.com/talon-org/agent-sandbox-docs.git
 git push -u origin main
 ```
 

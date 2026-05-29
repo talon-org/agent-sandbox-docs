@@ -57,13 +57,13 @@ try {
 ```
 
 ```go [Go]
-// go get x.xgit.pro/dark/talon-sandbox-sdk-go
+// go get github.com/talon-org/talon-sandbox-sdk-go
 package main
 
 import (
     "context"
     "fmt"
-    talonsandbox "x.xgit.pro/dark/talon-sandbox-sdk-go"
+    talonsandbox "github.com/talon-org/talon-sandbox-sdk-go"
 )
 
 func main() {
@@ -250,7 +250,7 @@ curl 同时支持三种鉴权方式,本页用了最简单的 Bearer + API key。
 ## CLI 备选
 
 不想拼 curl?用 `talon-sandbox` / `tsb`(短名),
-仓库:[talon-sandbox-cli](http://x.xgit.pro/dark/talon-sandbox-cli):
+仓库:[talon-sandbox-cli](https://github.com/talon-org/talon-sandbox-cli):
 
 ```bash
 # 一行起跑 + 暴露:

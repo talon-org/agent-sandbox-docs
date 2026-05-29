@@ -67,6 +67,7 @@ export default withMermaid(defineConfig({
         text: '核心概念',
         items: [
           { text: 'Sandbox 生命周期', link: '/concepts/sandbox-lifecycle' },
+          { text: '网络策略', link: '/concepts/sandbox-network' },
           { text: '端口暴露 (expose)', link: '/concepts/expose-ports' },
           { text: '签名 Preview URL', link: '/concepts/signed-preview' },
         ],
@@ -121,6 +122,7 @@ export default withMermaid(defineConfig({
           text: '核心概念',
           items: [
             { text: 'Sandbox 生命周期', link: '/concepts/sandbox-lifecycle' },
+            { text: '网络策略', link: '/concepts/sandbox-network' },
             { text: '端口暴露 (expose)', link: '/concepts/expose-ports' },
             { text: '签名 Preview URL', link: '/concepts/signed-preview' },
           ],
@@ -166,12 +168,12 @@ export default withMermaid(defineConfig({
     },
 
     socialLinks: [
-      { icon: 'github', link: 'http://x.xgit.pro/dark/agent-sandbox-platform' },
+      { icon: 'github', link: 'https://github.com/talon-org/agent-sandbox-platform' },
     ],
 
     editLink: {
-      pattern: 'http://x.xgit.pro/dark/agent-sandbox-docs/edit/main/docs/:path',
-      text: '在 Gitea 上编辑此页',
+      pattern: 'https://github.com/talon-org/agent-sandbox-docs/edit/main/docs/:path',
+      text: '在 GitHub 上编辑此页',
     },
 
     lastUpdated: {

@@ -54,7 +54,7 @@ description: Talon Sandbox 版本更新记录
   `@agent-sandbox/sdk`(57 tests)/ Go(56 tests, -race 绿)/ .NET
   `AgentSandbox.Sdk`(53 tests)。各自独立 git 仓,从同一份 OpenAPI 对齐字段。
   全部支持 hero 三步:create with `wait="running"` → run process → preview URL。
-- **客户文档站**:VitePress 驱动 [agent-sandbox-docs](http://x.xgit.pro/dark/agent-sandbox-docs),
+- **客户文档站**:VitePress 驱动 [agent-sandbox-docs](https://github.com/talon-org/agent-sandbox-docs),
   含 quickstart(curl 30s + docker + systemd + SDK)+ API 参考 9 页 +
   OpenAPI Redoc 渲染 + 部署 4 页 + 运维监控 + changelog。
 - **设计 tokens**:`design-tokens/tokens.css` 8 主题 × 2 mode × 4 字体 × 3 密度

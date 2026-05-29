@@ -4,6 +4,40 @@ sandbox 是平台的核心资源，代表一个完全隔离的运行环境。
 
 所有端点需要 `developer` 角色（GET 只读端点需要 `viewer` 及以上）。
 
+## Sandbox 能力速查
+
+一张表看全 sandbox 的所有能力。
+
+| 能力 | 字段 / 端点 | 说明 |
+|------|------------|------|
+| **镜像** | `image` | 指定容器镜像（如 `node:20-bookworm`）；空 = 使用默认镜像 |
+| **CPU** | `resources.cpu` | 浮点 core 数，如 `0.5`、`2`；0 = 使用 worker 默认值 |
+| **内存** | `resources.memory` | 字符串单位，如 `"4GiB"`；空 = 使用 worker 默认值 |
+| **磁盘** | `resources.disk` | 字符串单位，如 `"20GiB"`；空 = 使用 worker 默认值 |
+| **进程数上限** | `resources.pids_limit` | 最大并发进程数；0 = 使用 worker 默认值 |
+| **空闲超时** | `timeout` | duration 字符串，如 `"30m"`；sandbox 无操作超过此时长自动 pause；空 = 禁用 |
+| **硬性 TTL** | `ttl` | duration 字符串，如 `"6h"`；从创建时间起超过此时长自动 destroy；空 = 禁用 |
+| **网络策略** | `network` | `open`（全放行）/ `allowlist`（白名单）/ `sealed`（完全隔离）；见[网络策略](/concepts/sandbox-network) |
+| **主机白名单** | `network_allowed_hosts` | `[]string`；配合 `allowlist` 使用，支持域名 / IP / CIDR |
+| **凭证注入** | `secrets[]` | 将已创建的 secret 以 `env` 或 `file` 方式注入 sandbox |
+| **环境变量** | `env` | `map[string]string`；sandbox 启动时注入的环境变量 |
+| **标签** | `labels` | `map[string]string`；用户自定义标签，用于过滤和识别 |
+| **可读名称** | `name` | 自定义名称；空时 UI 显示 id |
+| **任务描述** | `task` | 本次任务的文字描述，显示在控制台概览 |
+| **启动等待** | `?wait=running` | query 参数；服务端阻塞直到 sandbox 进入 running 后再返回 |
+| **执行命令** | `POST /{id}/exec` | 同步执行一次性命令，返回 stdout / stderr / exit_code |
+| **长驻进程** | `POST /{id}/processes` | 启动后台进程，支持 env / cwd / 声明暴露端口 |
+| **端口暴露** | `POST /{id}/expose` | 注册端口并获得 preview URL；支持自定义子域名和签名 token |
+| **文件系统** | `/v1/sandboxes/{id}/fs/*` | 列目录、读文件、写文件 |
+| **交互式终端** | WebSocket `/{id}/pty` | 交互式 PTY，全程录像为 asciicast v2 格式 |
+| **浏览器** | `POST /{id}/browser` | 启动 Chromium，通过 CDP 协议控制 |
+| **Agent Run** | `POST /{id}/agent/run` | 自动化 agent 步骤执行，最多 100 步 |
+| **录制** | `GET /{id}/recordings/*` | 获取 PTY 会话录像（asciicast v2 格式） |
+
+duration 字符串格式：`30s` / `5m` / `2h` / `1d` / `1w`（扩展支持 `d` / `w` 单位）。
+
+size 字符串格式：`512MiB` / `4GiB` / `20GB`（binary KiB/MiB/GiB 和 decimal KB/MB/GB 均接受，大小写不敏感）。
+
 ## POST `/v1/sandboxes` {#post-sandboxes}
 
 创建 sandbox。

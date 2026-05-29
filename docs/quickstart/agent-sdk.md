@@ -24,7 +24,7 @@ npm install talon-sandbox
 ```
 
 ```bash [Go]
-go get x.xgit.pro/dark/talon-sandbox-sdk-go
+go get github.com/talon-org/talon-sandbox-sdk-go
 ```
 
 ```bash [.NET]
@@ -36,7 +36,7 @@ dotnet add package TalonSandbox.Sdk
 brew install talon-sandbox
 
 # 源码安装(立即可用)
-go install x.xgit.pro/dark/talon-sandbox-cli@latest
+go install github.com/talon-org/talon-sandbox-cli@latest
 # 安装后两个名字都能用:talon-sandbox / tsb(短名)
 ```
 
@@ -115,7 +115,7 @@ import (
     "os"
     "time"
 
-    talonsandbox "x.xgit.pro/dark/talon-sandbox-sdk-go"
+    talonsandbox "github.com/talon-org/talon-sandbox-sdk-go"
 )
 
 func main() {
@@ -282,7 +282,7 @@ await pty.close();
 ```
 
 ```go [Go]
-import "x.xgit.pro/dark/talon-sandbox-sdk-go/terminal"
+import "github.com/talon-org/talon-sandbox-sdk-go/terminal"
 
 pty, _ := terminal.Open(ctx, sb, "/bin/bash")
 defer pty.Close(ctx)
